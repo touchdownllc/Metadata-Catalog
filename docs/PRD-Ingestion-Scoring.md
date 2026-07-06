@@ -1,6 +1,6 @@
 # Metadata Catalog — Ingestion & Scoring PRD
 
-> **Status:** Draft · **Last updated:** 2026-06-18 · **Owner:** Ed-Fi Alliance Staff
+> **Status:** Draft · **Last updated:** 2026-7-6 · **Owner:** Ed-Fi Alliance Staff
 
 ---
 
@@ -30,15 +30,38 @@ Ed-Fi staff have no scalable method to:
 
 Manual scoring is slow, inconsistent across reviewers, and does not scale to the number of states and elements in scope. The ingestion process, and an LLM-assisted pipeline that produces auditable, human-overridable scores produce the output for dashboards and other analytics, and the list of elements that require evaluation to reduce complexity.
 
-### 1.3 Target Users for this PRD
+### 1.3 Solutions to the Problem
+
+To solve the problems associated to the manual scoring, there will be automated processes to automatically: (1) pull a state Data Standard model configuration (handled in the ingestion pipeline);  (2) to define the Business logic imposed to vendors for each element, and apply the two NACHOS scores based on the logic (handled in the scoring pipeline); (3) to store these outputs in a storage database; (4) to produce a list of elements with some complexity that should be reviewed with the states, and (5) to support a manual override of some scores by adding new business requirements as these are learned from state conversations and updating the database with the new scores; and (6) to support further analytical work using the newly updated database.
+
+**Story: At the end of the ingestion and scoring processes, the storage database will be updated with a state-specific Ed-Fi data model, with all the business requirements and logic for all elements that are passed to the vendors, their NACHOS and Adjusted NACHOS scores and rationale for the scoring and recommendations as a minimum,  so that  Ed-Fi members can run reports on the data, analyze common added complexity elements.  At the end of the scoring processes there will be a list artefact that lists the elements with some complexity scores, so that the Ed-Fi architecture team can discuss solutions with state agencies to reduce their complexity.**
+
+The database will be updated with all the scoring information, including
+
+* Updated swagger for any state, indicating the elements that are sent to SIS, Assessment or any other vendor for their processes, including extended entities, and/or extended elements within core entities.
+* Updated business logic, which indicates what processes have to be run for a vendor to send that element.  A data element can trigger multiple business logic.
+* NACHOS and Adjusted NACHOS Scores for each element, rationale for the scores, along with recommendation if applicable.
+* Updated business logic and scores from manual review.
+
+### 1.4 Term Definitions
+
+| Term | Definition |
+|---|---|
+| **State-specific swagger** | in this document, it refers to all the elements that are required by that state for state reporting, including extensions, and if these extensions are necessary or not along with rationale to why they are necessary|
+| **Extension** | Any data element, including entities, not listed in the Ed-Fi Data Standard in a specific version. Thus if the state uses Ed-Fi DS 4.0, then extensions refer to any element or entity not listed in the Ed-FI DS v4.0|
+| **Source File** |Resulting file from the ingestion pipeline, which contains any data element of the data model listed by a state|
+| **Spine File** |Resulting file from the ingestion pipeline, which contains the business logic identified for any element by a particular state |
+| **In Scope file** |File that contains the data elements, including the entities, for a state-specific data model AND that are updated by vendors.  The in-scope file excludes values updated by the state agency, which are only pull by vendors|
+
+### 1.5 Target Users for this PRD
 
 | User | Role |
 |---|---|
 | **Ed-Fi Alliance Staff** | Primary operators of both pipelines; consumers of score reports and standardization analytics |
 
-Excluded from this PRD are: Vendors and SEA Staff.  They will be interested in read only capacity to some of the data. Vendors and SEA Staff may be given read access to some of the data in the future. SEA Staff may be given access to write a commitment form, and submit corrections to the scoring and business requirements.
+Excluded from this PRD are: SIS, Assessment or other Vendors, as SEA Staff.  They will be interested in read only capacity to some of the data. Vendors and SEA Staff may be given read access to some of the data in the future. SEA Staff may be given access to write a commitment form, and submit corrections to the scoring and business requirements.
 
-### 1.4 Design Principles
+### 1.6 Design Principles
 
 **Auditability over automation.** Every score is traceable to an evidence record. A score without a traceable rationale is not acceptable.
 
@@ -98,19 +121,11 @@ The output of the ingestion process SHALL contain one row per attribute with the
 | `element_type` | Element type from the Ed-Fi Data Standard |
 | `element_cardinality` | Keys, optional, required, or optional conditional |
 
-#### 2.1.3 Business Logic Extraction IDENTIFIED AS "JBTD 3: Standardization of Data Collection Metadata " in Initial PRD
+### 2.2 JTBD 3 — Scoring Engine
 
-**Story:** As Ed-Fi Alliance Staff, I want to extract data collection requirements from any SEA and store them in a standardized manner, so that I can analyze and help improve the SEA's requirements.
+**Story:** As Ed-Fi Alliance Staff, I want to run a scoring engine that assigns a complexity score to each SEA data collection requirement, so that I can help the SEA align their data collection with the Ed-Fi Data Standard.
 
-**Acceptance Criteria:**
-
-* Standardized metadata storage with a schema that can represent normalized metadata plus provenance and curation status
-* The standardized repository SHALL preserve provenance and curation status for each material metadata element, including whether it came from exact artifact import, inexact supplemental extraction, or manual editing.
-* Phase 1 minimum acceptance: Ed-Fi Alliance Staff MUST be able to load, store, and manually curate standardized metadata in that repository even before any scoring or other downstream analytical consumer is delivered.
-* Ed-Fi Alliance Staff MUST be able to manually curate standardized metadata regardless of whether it originated from exact import or inexact extraction.
-* Phase 2 downstream-consumer readiness: the standardized repository SHALL expose standardized metadata programmatically to the scoring engine and other downstream use cases once those consumers are introduced.
-* The schema SHALL be at the **(resource, property) grain** and SHALL map state documentation onto the **canonical Ed-Fi Data Standard surface**, so a source lens and an API-model (coverage) lens are possible.
-* The repository SHALL retain the **source narrative text** (or stable, normalized references) sufficient to validate and display _cited spans_; a cited span cannot be shown against source text that was not retained. (The Phase-1 schema should anticipate this.)
+#### 2.2.1 Business Logic Extraction
 
 The system SHALL accept a second input form — separate from the Swagger input — requesting the path(s) to the state's supplemental **business documentation** (e.g., data dictionaries, collection guides, data submission manuals, annotated spreadsheets).
 
@@ -121,7 +136,7 @@ The system SHALL run process that operates at the **element level**, associating
 * The source document and page/section reference (cited span)
 * A confidence score for the extraction
 
-#### 2.1.4 Scope Classification
+#### 2.2.2 Scope Classification
 
 **Story:** As a user, I want each element classified as in-scope or out-of-scope based on who populates it and what write operations are permitted, so that scoring and analysis focus on the elements that carry real implementation burden for vendors.
 
@@ -133,7 +148,7 @@ The system SHALL run a scope classification for each element in the Swagger usin
 
 The classification process SHALL emit a confidence level (High / Medium / Low) and a brief rationale for each out-of-scope classification. Staff MAY override any classification.
 
-#### 2.1.5 Data Storage
+#### 2.2.3 Data Storage
 
 **Story:** As a user, I want all ingested element data, business logic, and scope classifications automatically stored in the database so that the records are available for scoring and analysis.
 
@@ -157,14 +172,10 @@ The system SHALL write the following data to the storage database for each eleme
 | `scope_confidence` | High / Medium / Low |
 | `created_at` | Timestamp of record creation |
 
-As a user I want to have a clear understanding of the similarity of the element to the ed-Fi data standard, and if the deviation to the core happened at element definition or in the business requirements to send such element, so that I can match the subsequent cascade rules and logic to the actual data
+TBD in discussion with Chris, Suganya:  As a user I want to have a clear understanding of the similarity of an extended element to the ed-Fi data standard, so that I can further inquiry with the state agency the reasoning for having an extension instead of the Ed-Fi core element
 ---
 
-### 2.2 JTBD 3 — Scoring Engine
-
-**Story:** As Ed-Fi Alliance Staff, I want to run a scoring engine that assigns a complexity score to each SEA data collection requirement, so that I can help the SEA align their data collection with the Ed-Fi Data Standard.
-
-#### 2.2.1 Scoring LLM Execution
+#### 2.2.4 Scoring LLM Execution
 
 **Story:** As a user, I want the scoring engine to extract facts from the business logic using an LLM, evaluate deterministic facts computed from the record structure, and assign scores using a rules cascade, so that each element has a well-supported, auditable complexity score.
 
@@ -213,7 +224,7 @@ The system SHALL run a Scoring LLM against each in-scope element record produced
 > [!NOTE]
 > **Semantic-fidelity adjustment.** When a state narrows, broadens, or changes the canonical Ed-Fi meaning of an element, an adjustment SHALL be applied to the base NACHOS score. Exact adjustment magnitudes are subject to Alliance methodology review and SHALL be configurable without a code deployment.
 
-#### 2.2.2 Rule Cascade and Score Overrides
+#### 3. Rule Cascade and Score Overrides
 
 **Story:** As a user, I want to see all the rules and cascade elements that are triggered for each row, along with the associated NACHOS score, Adjusted NACHOS score, and the name of the tier matched, so that I can understand exactly how each score was derived.
 
@@ -221,24 +232,19 @@ The system SHALL run a Scoring LLM against each in-scope element record produced
 
 The scoring logic SHALL implement the rule cascade defined in the **POC Recommendation document (page 11)**. The rule cascade determines which combination of extracted flags maps to which NACHOS tier and drives the `firing_rule_path` and `tier_name` fields in the evidence record.
 
-> [!IMPORTANT - NOT REALLY]
-> Reference: _POC Recommendation document, page 11 — Rule Cascade table_. The rule cascade is the authoritative source for score assignment logic. Any discrepancy between this PRD and that document should be resolved in favor of the POC Recommendation document pending a formal methodology review.
-
 Staff SHALL be able to inspect the full `firing_rule_path` and `tier_name` for any scored element to understand exactly which rules fired and which tier was matched.
 
-Staff SHALL be able to override a rule for a specific field by providing a written rationale. Staff SHALL also be able to add state-specific scoring logic for any field. Both overrides and additions SHALL trigger a rescore of the affected element(s).
-
-The system SHALL preserve a complete history of scoring changes per element, including the original machine-assigned score, each override or addition applied, the rationale provided, the staff member who made the change, and the resulting rescored values.
-
-#### 2.2.3 Logic alignment, rescoring and manual score ovewrite
+#### 3.1 Logic alignment, rescoring and manual score overwrite
 
 * **Story** as an Ed-Fi ALliance Staff, I must be able to add a new business rule for a particular element or an entity, and re-run the LLM scoring, showing the old and new NACHOS and adjusted NACHOS scores, along with the rules that it triggers, and decide if the new scores are acceptable.
 *
 * **Story** Ed-Fi Alliance Staff MUST be able to override the assigned score based on human judgment, with the new scores and rationale recorded against the row's evidence record.
 
-#### 2.2.4 Score and Override Storage
+**Story:** As a user, I want to pull all scores, evidence records, rule overrides, and the full scoring history stored in the database so that any score is inspectable without re-running the model and all changes are traceable over time.
 
-**Story:** As a user, I want all scores, evidence records, rule overrides, and the full scoring history stored in the database so that any score is inspectable without re-running the model and all changes are traceable over time.
+The system SHALL preserve a complete history of scoring changes per element, including the original machine-assigned score, each override or addition applied, the rationale provided, the staff member who made the change, and the resulting rescored values.
+
+#### 3.2 Score and Override Storage
 
 The system SHALL write scores and evidence records to the storage database upon completion of a scoring run, extending each element record with the following fields:
 
@@ -247,24 +253,20 @@ The system SHALL write scores and evidence records to the storage database upon 
 | `scoring_run_id` | Unique identifier for the scoring run |
 | `nachos_score` | Base NACHOS scalar |
 | `adjusted_nachos` | Adjusted NACHOS scalar |
-| `implementation_shape` | Structural complexity classification |
-| `documentation_style` | Documentation style classification |
-| `documentation_gap` | Boolean |
-| `evidence_record` | Full JSON evidence record (all LLM-extracted fields) |
-| `firing_rule_path` | Ordered rule list that produced the score |
-| `review_routing` | Auto-accept or Route-for-review |
-| `override_score` | Staff-assigned score (null if not overridden) |
+| `override_nachos_score` | Staff-assigned score (null if not overridden) |
 | `override_rationale` | Staff-provided rationale for override (null if not overridden) |
 | `override_by` | Staff member who applied the override (null if not overridden) |
 | `scored_at` | Timestamp of score assignment |
+| `override_adjusted_nachos_score` | Calculated over override_nachos_score (null if not overridden) |
 
+TBD with Chris, Suganya:  Should we label the nachos_score as OLD, and then update new nachos-score with the overwritten value.
 The evidence record SHALL be stored in full so that any score is inspectable without re-running the model.
 
 The system SHALL maintain a scoring history table that records each override or state-specific rule addition, preserving the prior score, the change applied, the rationale, and the re-scored result.
 
 ---
 
-### 2.3 JTBD 3 — Score Evaluation Analytics _(TBD)_
+### 4. JTBD 3 — Score Evaluation Analytics _(TBD)_
 
 Analysis of aggregate score data across states and across time is scoped for a future phase. Requirements will be defined separately.
 
