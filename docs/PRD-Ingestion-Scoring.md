@@ -8,7 +8,7 @@
 
 ### 1.1 Background
 
-The Data Standard Metadata Collection and Usage initiative collects, stores, and analyzes metadata about Ed-Fi Data Standard implementations — specifically the API specifications and supplemental data collection rules that state education agencies (SEAs) publish for vendors. Three high-value workflows sit at the center of the initiative: a **scoring engine** that measures the complexity of each SEA's data collection requirements, a process that involves conversations with the SEAs to align their speicifications to the Ed-Fi Data Standard (reduction in commplexity), and a **cluster analysis** that surfaces cross-state patterns.
+The Data Standard Metadata Collection and Usage initiative collects, stores, and analyzes metadata about Ed-Fi Data Standard implementations — specifically the API specifications and supplemental data collection rules that state education agencies (SEAs) publish for vendors. Three high-value workflows sit at the center of the initiative: a **scoring engine** that measures the complexity of each SEA's data collection requirements, a process that involves conversations with the SEAs to align their specifications to the Ed-Fi Data Standard (reduction in complexity), and a **cluster analysis** that surfaces cross-state patterns.
 
 This PRD covers phase 2 of automated ingestion and NACHOS scoring.
 
@@ -58,12 +58,12 @@ The database will be updated with all the ingestion and scoring information, inc
 
 | Term | Definition |
 |---|---|
-| **State-specific swagger** | in this document, it refers to all the elements that are required by that state for state reporting, including extensions, and if these extensions are necessary or not along with rationale to why they are necessary|
-| **Extension** | Any data element, including a whole entity, not listed in the Ed-Fi Data Standard in a specific version. For example, if the state uses Ed-Fi DS 4.0, then an extension refers to any element or entity not listed in the Ed-FI DS v4.0|
-| **Source File** |Resulting artifact from the ingestion pipeline, which contains any data element of the data model listed by a state|
+| **State-specific swagger** | in this document, it refers to all the elements that are required by that state for state reporting, including extensions, and if these extensions are necessary or not along with rationale to why they are necessary |
+| **Extension** | Any data element, including a whole entity, not listed in the Ed-Fi Data Standard in a specific version. For example, if the state uses Ed-Fi DS 4.0, then an extension refers to any element or entity not listed in the Ed-FI DS v4.0 |
+| **Source File** |Resulting artifact from the ingestion pipeline, which contains any data element of the data model listed by a state |
 | **Spine File** |Resulting artifact from the ingestion pipeline, which contains the business logic identified for any element by a particular state |
 | **Gap Log File** |Resulting artifact from the ingestion pipeline, which matches the elements that are both in the source and spine files. This artifact represents the elements from the state that have business requirements |
-| **In Scope attribute** |Attribute that indicates if the data element needs to be populated by vendors via Pull, PUSH, GET in which case it is in-scope = true.  If the element is populated by the state and only read by the vendor, then in-scope = false.  Descriptors are in-scope|
+| **In Scope attribute** |Attribute that indicates if the data element needs to be populated by vendors (in-scope = true).  If the element is populated by the state and only read by the vendor, then in-scope = false.  Descriptors are in-scope |
 
 ### 1.5 Target Users for this PRD
 
@@ -266,7 +266,7 @@ The evidence record SHALL be stored in full so that any score is inspectable wit
 
 ## 3. Non-Functional Requirements
 
-### 3.1 Implemented Requirements
+### 3.1 Implementation Requirements
 
 | ID | Category | Requirement | Implementation |
 |---|---|---|---|
