@@ -10,12 +10,17 @@
 
 The Data Standard Metadata Collection and Usage initiative collects, stores, and analyzes metadata about Ed-Fi Data Standard implementations — specifically the API specifications and supplemental data collection rules that state education agencies (SEAs) publish for vendors. Three high-value workflows sit at the center of the initiative: a **scoring engine** that measures the complexity of each SEA's data collection requirements, a process that involves conversations with the SEAs to align their specifications to the Ed-Fi Data Standard (reduction in complexity), and a **cluster analysis** that surfaces cross-state patterns.
 
-This PRD covers phase 2 of automated ingestion and NACHOS scoring.
+This Ingestion and Scoring PRD covers the following jobs from the overall Metadata Catalog project:
+
+* JTBD 1 (Scoring Engine)
+* JTBD 3 (Standardization of Data Collection),
+* JTBD 4 (storage API Specifications),
+* and produces the output that will be written into the database --JTBD 7(Storage Engine).
 
 This document covers the two pipelines that make those workflows possible:
 
-* the **Ingestion Pipeline** (JTBD 1), which converts raw SEA artifacts (Swagger/OAS files and supplemental business documentation) into structured, element-level records.
-* and the **Scoring Engine** (JTBD 3), which assigns NACHOS complexity scores to those records.
+* the **Ingestion Pipeline**, which converts raw SEA artifacts (Swagger/OAS files and supplemental business documentation) into structured, element-level records.
+* and the **Scoring Engine** , which assigns NACHOS complexity scores to those records.
 
 The PRD for the overall Metadata Project is referenced in this link.  **Link To be added**
 
@@ -33,7 +38,8 @@ Manual scoring is slow, inconsistent across reviewers, and does not scale to the
 ### 1.3 Solutions to the Problem
 
 The ingestion process, and an LLM-assisted pipeline that produces auditable, human-overridable scores produce the output for dashboards and other analytics, and the list of elements that require evaluation to reduce complexity.
-There will be automated processes to:
+
+The solution to the problem consists of a series of automated processes that accomplish these functions:
 
 * (1) pull the most recent Data Standard model configuration for a specific state (handled in the ingestion pipeline);
   
@@ -41,11 +47,11 @@ There will be automated processes to:
   
 * (3) to store these outputs in a storage database;
   
-* (4) TBD: to produce a list of elements that should be reviewed with the states, in order to reduce their complexity; and
+* (4) to produce a list of elements that should be reviewed with the states, in order to reduce their complexity; and
 
 * (5) to support a manual override of some scores based on state conversations.
 
-**Story: At the end of the ingestion and scoring processes, the storage database will be updated with the state-specific Ed-Fi data model and derived results from the ingestion and scoring pipelines,  so that an analytical engine can read the data to run reports, produce dashboards and run cluster analyses.  At the end of the scoring processes, there will be an additional artefact, which lists the elements with some complexity scores, so that the Ed-Fi architecture team can discuss solutions with state agencies to reduce such complexity.**
+**Story: At the end of the ingestion and scoring processes, the storage database will be updated with the state-specific Ed-Fi data model and derived results from the ingestion and scoring pipelines,  so that an analytical engine can read the data to run reports, produce dashboards and run cluster analyses.  The analytical engine will also lists the elements with some complexity scores, so that the Ed-Fi solutions team can discuss alternatives with state agencies to reduce such complexity.**
 
 The database will be updated with all the ingestion and scoring information, including
 
@@ -60,9 +66,10 @@ The database will be updated with all the ingestion and scoring information, inc
 |---|---|
 | **State-specific swagger** | in this document, it refers to all the elements that are required by that state for state reporting, including extensions, and if these extensions are necessary or not along with rationale to why they are necessary |
 | **Extension** | Any data element, including a whole entity, not listed in the Ed-Fi Data Standard in a specific version. For example, if the state uses Ed-Fi DS 4.0, then an extension refers to any element or entity not listed in the Ed-FI DS v4.0 |
-| **Source File** |Resulting artifact from the ingestion pipeline, which contains any data element of the data model listed by a state |
-| **Spine File** |Resulting artifact from the ingestion pipeline, which contains the business logic identified for any element by a particular state |
-| **Gap Log File** |Resulting artifact from the ingestion pipeline, which matches the elements that are both in the source and spine files. This artifact represents the elements from the state that have business requirements |
+| **Source File** |Resulting artifact from the ingestion pipeline - stage 1, is the state's own published documentation that is written for vendors, with one record per element (entity.element) with the state's verbatim text plus a provenance point. |
+| **Spine File** |Resulting artifact from the ingestion pipeline - stage 2, is the Ed-Fi Swagger/API specification that contains the structure (entities, elements, foreign-key chains, descriptors, extension surfaces) that the state-specific documentation is joined to |
+| **Lens** | A lens is one of two parallel, never-averaged views of a state's data:  Source lens — starts from what the state actually wrote; one row per source-document entry; answers "how clear is the state's authored prose?"; Spine lens — starts from the full canonical Ed-Fi surface; one row per spine (entity, element) pair; answers "how much of Ed-Fi does the state document at all?" |
+| **Gap Log File** |Resulting artifact from the ingestion pipeline, which indicates the spine elements NOT mentioned in the state's source documentation |
 | **In Scope attribute** |Attribute that indicates if the data element needs to be populated by vendors (in-scope = true).  If the element is populated by the state and only read by the vendor, then in-scope = false.  Descriptors are in-scope |
 
 ### 1.5 Target Users for this PRD
@@ -70,7 +77,7 @@ The database will be updated with all the ingestion and scoring information, inc
 | User | Role |
 |---|---|
 | **Ed-Fi Alliance Staff** | Primary operators of both pipelines; consumers of score reports and standardization analytics |
-| **Development and Analytical team** | Creators of the pipelines and of the system |
+| **Developers and Analytical teams** | Creators of the system and users of the analytical engine|
 
 Excluded from this PRD are: SIS, Assessment or other Vendors, and SEA Staff.
 
@@ -173,7 +180,7 @@ The system SHALL write the following data to the storage database for each eleme
 | `state_id` | State identifier |
 | `entity_name` | Entity name from the state's Swagger |
 | `element_name` | Name of the element as defined by the state |
-| `data_type` | WHether it is a descriptor, reference, string.. |
+| `data_type` | WHether it is a descriptor, reference, string |
 | `cardinality` | WHether the element is an identity, required or optional |
 | `source` | WHether it is core or extension |
 | `element_path` | Full field path within the entity |
@@ -234,9 +241,9 @@ Staff SHALL be able to inspect the full `firing_rule_path` and `tier_name` for a
 
 ---
 
-### 4. List of elements that present some complexity _(Not clear if this requirement is part of this PRD)_
+### 4. List of elements that present some complexity _(Not part of this PRD)_
 
-Analysis of aggregate score data across states and across time is scoped for a future phase. Requirements will be defined separately.
+Process listed above as part of the solution to manual scoring.  However,this process is not included in this PRD. Analysis of aggregate score data across states and across time is scoped for a future phase in a different job. Requirements will be defined separately.
 
 ---
 
@@ -244,7 +251,9 @@ Analysis of aggregate score data across states and across time is scoped for a f
 
 **Story:** As a user, I want to adjust scoring rules for specific fields with a rationale, or add new logic specific to a state, and trigger rescoring — with the full history of scoring changes preserved — so that I can refine scores based on domain expertise without losing the prior scoring record.
 
-The scoring logic SHALL implement the rule cascade defined in the **POC Recommendation document (page 11)**. The rule cascade determines which combination of extracted flags maps to which NACHOS tier and drives the `firing_rule_path` and `tier_name` fields in the evidence record.
+The scoring logic SHALL implement the same rule cascade that is run earlier in the process. The rule cascade determines which combination of extracted flags maps to which NACHOS tier and drives the `firing_rule_path` and `tier_name` fields in the evidence record.
+
+The user can update a NACHOS Score, or a definition of an extension, but needs to indicate the rationale for it.  However, the user should not be capable to rewrite an Adjusted NACHOS Score, because the Adjusted NACHOS is calculated from the NACHOS based on a defined logic.
 
 The system SHALL preserve a complete history of scoring changes per element, including the original machine-assigned score, each override or addition applied, the rationale provided, the staff member who made the change, and the resulting new values.
 
@@ -254,15 +263,16 @@ The system SHALL write scores and evidence records to the storage database upon 
 |---|---|
 | `scoring_run_id` | Unique identifier for the scoring run |
 | `nachos_score` | Staff-assigned Base NACHOS score (previous value if not overridden) |
-| `adjusted_nachos` | Staff-assigned Adjusted NACHOS score (previous value if not overridden) |
+| `necessary_extension` | Staff-assigned value of necessity of the extension (previous value if not overridden) |
+| `adjusted_nachos` | System recalculated Adjusted NACHOS score (previous value if not overridden) |
 | `former_nachos_score` | Former Base NACHOS score |
+| `former_adjusted_nachos` | Former Adjusted NACHOS score |
+| `former_necessary_extension` | Former value of the necessary extension |
 | `override_rationale` | Staff-provided rationale for override (null if not overridden) |
 | `override_by` | Staff member who applied the override (null if not overridden) |
 | `scored_at` | Timestamp of score assignment |
-| `former_adjusted_nachos_score` | Former Adjusted_nachos_score (null if not overridden) |
 
-TBD with Chris, Suganya:  Should we label the nachos_score as OLD, and then update new nachos-score with the overwritten value.
-The evidence record SHALL be stored in full so that any score is inspectable without re-running the model.
+TBD with Chris, Suganya:  Should we store the new rule mapping when rescoring the element. The concern is that this maybe necessary, because the resulting values originate from either source or spine files which are not being edited.  We may not need to rescore the element.
 
 ## 3. Non-Functional Requirements
 
@@ -275,7 +285,7 @@ The evidence record SHALL be stored in full so that any score is inspectable wit
 | NFR-DATA-3 | Provenance | Every score SHALL carry a full evidence record persisted alongside the scalar | `evidence_record` JSON column on score table |
 | NFR-SEC-1 | Security | No student data or PII SHALL flow through any pipeline component | Input validation at ingestion form; static analysis gate in CI |
 
-### 3.2 Quality Gates (Scoring Engine)
+### 3.2 Quality Gates (Evaluating Scoring Accuracy) to be determined in other processes
 
 | ID | Metric | Target | Notes |
 |---|---|---|---|
@@ -285,11 +295,13 @@ The evidence record SHALL be stored in full so that any score is inspectable wit
 | QG-4 | Cohen's Kappa | >= 0.6 | Inter-rater agreement between engine and human reviewer |
 | QG-5 | Disagreement routing | 100% of tier disagreements routed for review | Disagreements are treated as calibration signal, not auto-resolved |
 
+The Quality Gates are calculated by either comparing with the manual results, or by obtaining new inputs from a new manual process.  The Quality Gates should be defined in the analytical engine
+
 ---
 
 ## 4. Architecture
 
-For technology Stack, Pipeline Overview, Data Model and Environment Variables, please refer to the Data Map document -Add link here.
+For technology Stack, Pipeline Overview, Data Model and Environment Variables, please refer to the Data Map document in the docs repo.
 
 ---
 
@@ -297,12 +309,11 @@ For technology Stack, Pipeline Overview, Data Model and Environment Variables, p
 
 The following are explicitly out of scope for this PRD:
 
-* JTBD 3 (Score Evaluation Analytics) — requirements TBD in a subsequent document
+* Scoring Quality Gates calculations
 * Student data of any kind
-* Real-time or webhook-based specification monitoring (batch ingestion only)
 * Direct SEA portal access or automated fetching from SEA systems
 * Vendor-facing score exposure (internal Ed-Fi staff use only in this phase)
 * Natural language query interface (separate capability in the broader initiative)
 * Cluster analysis across states (separate capability)
-* It is not clear if creating the list of elements that carry some complexity is part of this PRD.  It seems to belong to  dashboard-related  processes
+* List of elements that carry some complexity and are part of the Human Review (JTBD 14)
   
