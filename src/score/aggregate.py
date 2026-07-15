@@ -27,7 +27,7 @@ Phase D's routing (POLICY / SCORING / ANALYST / DATA_MODEL buckets)
 layers on top of these reasons.
 
 CRITICAL: module-level ``run()`` is a plain function. The Click wrapper
-lives in ``src/poc3/cli.py``. See
+lives in ``src/cli.py``. See
 ``tests/test_ingest_az.py::TestCliWiring`` for the regression pattern.
 """
 
@@ -71,7 +71,7 @@ _LOGGER = logging.getLogger(__name__)
 
 SCORING_PLAN_VERSION: str = "28"
 # v28 — issue #249 fact-level curation overlay (2026-07-13). Analyst
-# corrections to LLM-extracted facts (recorded by `poc3 review
+# corrections to LLM-extracted facts (recorded by `mc review
 # correct-fact` in the curation sidecar's `facts` blocks) are overlaid
 # onto the fact pool AFTER loading and BEFORE the rule cascade runs, so
 # the unchanged rules recompute from the corrected input. A corrected
@@ -776,9 +776,9 @@ def _apply_fact_corrections(
     sidecar and the model's original stays in the phase_a artifacts +
     prompt cache (never written here).
 
-    ``poc3 review correct-fact`` is the validation gate; apply-time is
+    ``mc review correct-fact`` is the validation gate; apply-time is
     tolerant-but-loud so a hand-edited or drifted sidecar degrades to
-    warnings instead of crashing ``poc3 publish``: unknown records,
+    warnings instead of crashing ``mc publish``: unknown records,
     non-LLM facts, facts absent from this pool, and type-invalid values
     are skipped with a warning each. Corrections whose value the model
     now agrees with still apply (the overlay is the record of what the

@@ -12,7 +12,7 @@ correct. A ``tier_delta_ge2`` row is a *disagreement pattern*, not a
 (see ``docs/archive/next-session/next-session-phase-e.md``).
 
 CRITICAL: ``run()`` is a plain function; the Click wrapper lives in
-``src/poc3/cli.py``.
+``src/cli.py``.
 """
 
 from __future__ import annotations
@@ -26,8 +26,8 @@ from typing import Iterable, Literal
 
 from src.score.review_keymap import (
     SpineIndex,
-    build_poc3_lookup,
-    reviewer_key_to_poc3_key,
+    build_mc_lookup,
+    reviewer_key_to_mc_key,
 )
 from src.score.review_loader import ReviewerRecord
 from src.states import SUPPORTED_STATES
@@ -47,19 +47,19 @@ Classification = Literal[
     "tier_delta_ge2",
     "key_sever_override",
     "gap_row_match",
-    "no_poc3_row",
+    "no_mc_row",
     "no_reviewer_row",
 ]
 # v12 (2026-04-28, issue #66 Layer 2) — ``gap_row_match`` added. A reviewer
 # row that lands on a spine-anchored gap entry (``{state}_elements_gap.json``)
 # instead of a sidecar score is recovered into this bucket rather than
-# bucketed as ``no_poc3_row``. Layer 2 was audit-only — gap rows had no
+# bucketed as ``no_mc_row``. Layer 2 was audit-only — gap rows had no
 # NACHOS score yet — so ``gap_row_match`` rows had no tier/adj.
 #
 # Layer 3 (2026-04-29, issue #73) — gap sidecars now carry full NACHOS
 # scoring. ``compare_state`` accepts an optional ``gap_scores`` index and
-# ``run()`` loads it from disk per state, populating ``poc3_tier``,
-# ``poc3_adj``, ``poc3_in_scope``, plus ``tier_delta`` / ``adj_delta`` on
+# ``run()`` loads it from disk per state, populating ``mc_tier``,
+# ``mc_adj``, ``mc_in_scope``, plus ``tier_delta`` / ``adj_delta`` on
 # gap_row_match rows whenever the canonical ``{STATE}|{entity}|{element}``
 # resolves in the gap sidecar. Classification stays ``gap_row_match`` —
 # the bucket label describes the lookup surface, not the score detail.
@@ -94,12 +94,12 @@ class ComparisonRow:
     reviewer_justification: str | None
 
     # POC-3 side — may be None when reviewer references a row POC-3
-    # doesn't materialize (``no_poc3_row`` bucket).
-    poc3_record_key: str | None
-    poc3_tier: int | None
-    poc3_adj: float | None
-    poc3_justification: str | None
-    poc3_in_scope: bool | None
+    # doesn't materialize (``no_mc_row`` bucket).
+    mc_record_key: str | None
+    mc_tier: int | None
+    mc_adj: float | None
+    mc_justification: str | None
+    mc_in_scope: bool | None
 
     # Deltas — None when either side is missing. Computed as
     # reviewer - POC-3 so a positive delta means reviewer scored higher.
@@ -115,8 +115,8 @@ def _reviewer_has_key_sever(justification: str | None) -> bool:
 
 def _classify_joined(
     reviewer: ReviewerRecord,
-    poc3_tier: int | None,
-    poc3_adj: float | None,
+    mc_tier: int | None,
+    mc_adj: float | None,
 ) -> Classification:
     """Decide the classification bucket for a row with both sides present.
 
@@ -132,7 +132,7 @@ def _classify_joined(
 
     v10 (2026-04-26) — ``in_scope_mismatch`` removed. Methodology scope
     rectification makes POC-3 ``in_scope`` uniformly True, so the prior
-    classification (which compared poc3 ``in_scope`` against a reviewer
+    classification (which compared mc ``in_scope`` against a reviewer
     heuristic ``adjusted != 0``) would have fired on every reviewer
     tier-0 row and flooded the digest with noise. Tier-0 vs tier-0 now
     falls through to ``match_exact``, which is correct.
@@ -148,23 +148,23 @@ def _classify_joined(
     r_tier = reviewer.nachos_score
     r_adj = reviewer.adjusted_nachos_score
 
-    if r_tier is None or poc3_tier is None:
+    if r_tier is None or mc_tier is None:
         return "tier_delta_ge2"
 
-    if r_tier == poc3_tier:
+    if r_tier == mc_tier:
         # Treat floats equal when within 0.01 to sidestep float noise —
         # both sides only emit 0.5-multiples so this is conservative.
         if (
             r_adj is not None
-            and poc3_adj is not None
-            and abs(r_adj - poc3_adj) < 0.01
+            and mc_adj is not None
+            and abs(r_adj - mc_adj) < 0.01
         ):
             return "match_exact"
-        if r_adj is None and poc3_adj is None:
+        if r_adj is None and mc_adj is None:
             return "match_exact"
         return "match_tier"
 
-    if abs(r_tier - poc3_tier) == 1:
+    if abs(r_tier - mc_tier) == 1:
         return "tier_delta_1"
     return "tier_delta_ge2"
 
@@ -183,11 +183,11 @@ def load_gap_scores(
     under ``sidecar_dir`` for tests) and returns the same shape
     ``_scores_index`` produces for source/spine sidecars. When the gap
     sidecar is absent, returns ``{}`` so the comparator degrades to
-    pre-Layer-3 behavior (gap_row_match rows with ``poc3_tier=None``).
+    pre-Layer-3 behavior (gap_row_match rows with ``mc_tier=None``).
 
     Layer 3 (issue #73) — gap sidecars now carry full NACHOS scoring,
     so reviewer rows that classify as ``gap_row_match`` can pivot from
-    ``poc3_tier=None`` to populated tier/adj/delta detail. The classification
+    ``mc_tier=None`` to populated tier/adj/delta detail. The classification
     bucket itself stays ``gap_row_match`` — the new fields are additive
     per-row score detail, not a re-bucketing.
     """
@@ -209,7 +209,7 @@ def load_gap_scores(
     if not path.exists():
         _LOGGER.info(
             "gap sidecar %s absent — gap_row_match rows will keep "
-            "poc3_tier=None for state %s",
+            "mc_tier=None for state %s",
             path, state,
         )
         return {}
@@ -222,7 +222,7 @@ def load_gap_lookup(
 ) -> dict[tuple[str, str], dict]:
     """Build ``(normalized_entity, lowered_element_alias) → gap record`` from disk.
 
-    Same shape as ``build_poc3_lookup`` so the reviewer keymap can resolve
+    Same shape as ``build_mc_lookup`` so the reviewer keymap can resolve
     against gap rows the same way it resolves against sidecar rows.
     Gracefully returns ``{}`` when the gap artifact has not been generated
     yet (``state_elements_gap_path`` absent) — the comparison degrades to
@@ -299,7 +299,7 @@ def _gap_lookup_resolve(
 ) -> dict | None:
     """Try to resolve a reviewer (entity, element) pair against the gap lookup.
 
-    Mirrors ``reviewer_key_to_poc3_key`` — same reviewer-side candidate
+    Mirrors ``reviewer_key_to_mc_key`` — same reviewer-side candidate
     generation so a reviewer row's ``tx_studentApplication / School.SchoolId``
     resolves to the gap entry written for the spine's
     ``StudentApplication / School`` (or whichever form the surfacer emitted).
@@ -326,16 +326,16 @@ def compare_state(
     gap_scores: dict[str, dict] | None = None,
     spine: SpineIndex | None = None,
 ) -> list[ComparisonRow]:
-    """Join reviewer rows for one state against one POC-3 lens sidecar.
+    """Join reviewer rows for one state against one MC lens sidecar.
 
     Emits:
-    - One row per reviewer record (matched or ``no_poc3_row``).
-    - Plus one ``no_reviewer_row`` row for every POC-3 in-scope record
+    - One row per reviewer record (matched or ``no_mc_row``).
+    - Plus one ``no_reviewer_row`` row for every MC in-scope record
       that no reviewer row landed on — surfaces coverage the reviewer
       didn't touch (e.g., MN extension-driven rows the reviewer file
       skipped).
 
-    Only POC-3 records with ``adjusted_nachos_score > 0`` surface as
+    Only MC records with ``adjusted_nachos_score > 0`` surface as
     ``no_reviewer_row``. Pre-v10 this filter used the ``in_scope``
     boolean; with v10's uniformly-True in_scope, the equivalent
     semantic is "rows the reviewer would care about" = nonzero
@@ -345,20 +345,20 @@ def compare_state(
     digest with no-information rows.
     """
     state_u = state.upper()
-    lookup = build_poc3_lookup(sidecar_scores, state=state_u)
+    lookup = build_mc_lookup(sidecar_scores, state=state_u)
     by_key = _scores_index(sidecar_scores)
     gap_lookup = gap_lookup or {}
     gap_scores = gap_scores or {}
 
-    matched_poc3_keys: set[str] = set()
+    matched_mc_keys: set[str] = set()
     rows: list[ComparisonRow] = []
 
     for rec in reviewer_records:
         if rec.state != state_u:
             continue
-        poc3_key = reviewer_key_to_poc3_key(rec.entity, rec.element, lookup, spine=spine)
-        if poc3_key is None:
-            # Pre-Layer-2 this would fall through to ``no_poc3_row``. Now
+        mc_key = reviewer_key_to_mc_key(rec.entity, rec.element, lookup, spine=spine)
+        if mc_key is None:
+            # Pre-Layer-2 this would fall through to ``no_mc_row``. Now
             # we first check the spine-anchored gap artifact: if the
             # reviewer row resolves there, classify as ``gap_row_match``
             # so analysts can distinguish "spine-known but source-silent"
@@ -384,33 +384,33 @@ def compare_state(
                     nachos_dim = (
                         gap_score.get("dimensions", {}).get("nachos_score", {}) or {}
                     )
-                    poc3_tier = nachos_dim.get("value")
-                    poc3_adj = gap_score.get("adjusted_nachos_score")
-                    poc3_in_scope = gap_score.get("in_scope")
-                    poc3_justification = (
+                    mc_tier = nachos_dim.get("value")
+                    mc_adj = gap_score.get("adjusted_nachos_score")
+                    mc_in_scope = gap_score.get("in_scope")
+                    mc_justification = (
                         f"gap_row[{gap_hit.get('discovery')}] "
                         f"{gap_score.get('nachos_justification') or ''}"
                     ).strip()
                     tier_delta = (
-                        rec.nachos_score - poc3_tier
-                        if rec.nachos_score is not None and poc3_tier is not None
+                        rec.nachos_score - mc_tier
+                        if rec.nachos_score is not None and mc_tier is not None
                         else None
                     )
                     adj_delta = (
-                        rec.adjusted_nachos_score - poc3_adj
+                        rec.adjusted_nachos_score - mc_adj
                         if rec.adjusted_nachos_score is not None
-                        and poc3_adj is not None
+                        and mc_adj is not None
                         else None
                     )
-                    poc3_record_key = canonical_key
+                    mc_record_key = canonical_key
                 else:
-                    poc3_tier = None
-                    poc3_adj = None
-                    poc3_in_scope = None
-                    poc3_justification = f"gap_row[{gap_hit.get('discovery')}]"
+                    mc_tier = None
+                    mc_adj = None
+                    mc_in_scope = None
+                    mc_justification = f"gap_row[{gap_hit.get('discovery')}]"
                     tier_delta = None
                     adj_delta = None
-                    poc3_record_key = _gap_record_key(state_u, gap_hit)
+                    mc_record_key = _gap_record_key(state_u, gap_hit)
                 rows.append(
                     ComparisonRow(
                         state=state_u,
@@ -421,11 +421,11 @@ def compare_state(
                         reviewer_tier=rec.nachos_score,
                         reviewer_adj=rec.adjusted_nachos_score,
                         reviewer_justification=rec.justification,
-                        poc3_record_key=poc3_record_key,
-                        poc3_tier=poc3_tier,
-                        poc3_adj=poc3_adj,
-                        poc3_justification=poc3_justification,
-                        poc3_in_scope=poc3_in_scope,
+                        mc_record_key=mc_record_key,
+                        mc_tier=mc_tier,
+                        mc_adj=mc_adj,
+                        mc_justification=mc_justification,
+                        mc_in_scope=mc_in_scope,
                         tier_delta=tier_delta,
                         adj_delta=adj_delta,
                     )
@@ -435,41 +435,41 @@ def compare_state(
                 ComparisonRow(
                     state=state_u,
                     lens=lens,
-                    classification="no_poc3_row",
+                    classification="no_mc_row",
                     reviewer_entity=rec.entity,
                     reviewer_element=rec.element,
                     reviewer_tier=rec.nachos_score,
                     reviewer_adj=rec.adjusted_nachos_score,
                     reviewer_justification=rec.justification,
-                    poc3_record_key=None,
-                    poc3_tier=None,
-                    poc3_adj=None,
-                    poc3_justification=None,
-                    poc3_in_scope=None,
+                    mc_record_key=None,
+                    mc_tier=None,
+                    mc_adj=None,
+                    mc_justification=None,
+                    mc_in_scope=None,
                     tier_delta=None,
                     adj_delta=None,
                 )
             )
             continue
 
-        matched_poc3_keys.add(poc3_key)
-        poc3 = by_key[poc3_key]
-        nachos_dim = src.get("dimensions", {}).get("nachos_score", {}) or {}
-        poc3_tier = nachos_dim.get("value")
-        poc3_adj = src.get("adjusted_nachos_score")
-        poc3_in_scope = src.get("in_scope")
-        poc3_justification = src.get("nachos_justification")
+        matched_mc_keys.add(mc_key)
+        mc = by_key[mc_key]
+        nachos_dim = mc.get("dimensions", {}).get("nachos_score", {}) or {}
+        mc_tier = nachos_dim.get("value")
+        mc_adj = mc.get("adjusted_nachos_score")
+        mc_in_scope = mc.get("in_scope")
+        mc_justification = mc.get("nachos_justification")
 
-        classification = _classify_joined(rec, poc3_tier, poc3_adj)
+        classification = _classify_joined(rec, mc_tier, mc_adj)
 
         tier_delta = (
-            rec.nachos_score - poc3_tier
-            if rec.nachos_score is not None and poc3_tier is not None
+            rec.nachos_score - mc_tier
+            if rec.nachos_score is not None and mc_tier is not None
             else None
         )
         adj_delta = (
-            rec.adjusted_nachos_score - poc3_adj
-            if rec.adjusted_nachos_score is not None and poc3_adj is not None
+            rec.adjusted_nachos_score - mc_adj
+            if rec.adjusted_nachos_score is not None and mc_adj is not None
             else None
         )
 
@@ -483,11 +483,11 @@ def compare_state(
                 reviewer_tier=rec.nachos_score,
                 reviewer_adj=rec.adjusted_nachos_score,
                 reviewer_justification=rec.justification,
-                poc3_record_key=poc3_key,
-                poc3_tier=poc3_tier,
-                poc3_adj=poc3_adj,
-                poc3_justification=poc3_justification,
-                poc3_in_scope=poc3_in_scope,
+                mc_record_key=mc_key,
+                mc_tier=mc_tier,
+                mc_adj=mc_adj,
+                mc_justification=mc_justification,
+                mc_in_scope=mc_in_scope,
                 tier_delta=tier_delta,
                 adj_delta=adj_delta,
             )
@@ -500,7 +500,7 @@ def compare_state(
     # the equivalent semantic.
     for entry in sidecar_scores:
         key = entry.get("record_key")
-        if not key or key in matched_poc3_keys:
+        if not key or key in matched_mc_keys:
             continue
         adj = entry.get("adjusted_nachos_score") or 0
         if adj <= 0:
@@ -519,11 +519,11 @@ def compare_state(
                 reviewer_tier=None,
                 reviewer_adj=None,
                 reviewer_justification=None,
-                poc3_record_key=key,
-                poc3_tier=nachos_dim.get("value"),
-                poc3_adj=entry.get("adjusted_nachos_score"),
-                poc3_justification=entry.get("nachos_justification"),
-                poc3_in_scope=entry.get("in_scope"),
+                mc_record_key=key,
+                mc_tier=nachos_dim.get("value"),
+                mc_adj=entry.get("adjusted_nachos_score"),
+                mc_justification=entry.get("nachos_justification"),
+                mc_in_scope=entry.get("in_scope"),
                 tier_delta=None,
                 adj_delta=None,
             )
@@ -541,7 +541,7 @@ def load_sidecar(state: str, lens: str, path: Path | None = None) -> list[dict]:
     target = path or state_scores_path(state, lens)  # type: ignore[arg-type]
     if not target.exists():
         raise FileNotFoundError(
-            f"sidecar not found: {target} — run `poc3 score aggregate` first."
+            f"sidecar not found: {target} — run `mc score aggregate` first."
         )
     payload = json.loads(target.read_text(encoding="utf-8"))
     return payload.get("scores", [])
@@ -601,7 +601,7 @@ def run(
         )
         all_rows.extend(rows)
         _LOGGER.info(
-            "compared %s %s: %d rows (reviewer+POC-3 joined + no-poc3 + no-reviewer)",
+            "compared %s %s: %d rows (reviewer+MC joined + no-mc + no-reviewer)",
             state,
             lens,
             len(rows),
@@ -625,13 +625,13 @@ def match_rate(rows: list[ComparisonRow]) -> tuple[int, int, float]:
     """Return ``(matched, reviewer_total, pct)`` for a slice of rows.
 
     Matched = any reviewer row that found a POC-3 counterpart (i.e.,
-    every classification except ``no_poc3_row`` and
+    every classification except ``no_mc_row`` and
     ``no_reviewer_row``). The denominator is reviewer-originated rows
     only — ``no_reviewer_row`` entries don't count against the
     reviewer's coverage.
     """
     reviewer_rows = [r for r in rows if r.classification != "no_reviewer_row"]
-    matched = sum(1 for r in reviewer_rows if r.classification != "no_poc3_row")
+    matched = sum(1 for r in reviewer_rows if r.classification != "no_mc_row")
     total = len(reviewer_rows)
     pct = (matched / total * 100.0) if total else 0.0
     return matched, total, round(pct, 1)

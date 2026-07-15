@@ -176,7 +176,7 @@ class Cache:
         # O_APPEND single-line append + fsync (issue #212 item 7). The
         # previous read-whole-shard → stage-tmp → os.replace cycle was
         # atomic against crashes but only THREAD-safe: two *processes*
-        # writing the same shard (two terminals, or `poc3 publish`
+        # writing the same shard (two terminals, or `mc publish`
         # beside a manual `score extract`) could interleave
         # read/replace and silently drop one writer's PAID entry. With
         # O_APPEND the kernel serializes writers — nobody's entry is

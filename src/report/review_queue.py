@@ -28,7 +28,7 @@ entirely). The priority ladder is deliberately conservative on
 ``ANALYST`` is the catch-all and expected to carry the volume.
 
 CRITICAL: ``run()`` is a plain function. The Click wrapper lives in
-``src/poc3/cli.py``. Reads per-state sidecars at
+``src/cli.py``. Reads per-state sidecars at
 ``data/out/{state}_scores_{lens}.json`` and writes
 ``data/out/review_queue_{lens}.{json,md}``.
 """

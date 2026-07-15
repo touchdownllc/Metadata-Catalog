@@ -1,4 +1,4 @@
-"""`poc3 publish` — the one-command refresh chain (issue #186 R1)."""
+"""`mc publish` — the one-command refresh chain (issue #186 R1)."""
 
 from src.publish.manifest import (  # noqa: F401
     PublishManifest,

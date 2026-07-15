@@ -372,7 +372,7 @@ def _write_fact_correction_register(
     adjudication-register convention. The ``Status`` column is the
     honesty signal: ``pending re-aggregate`` means the curation sidecar
     holds the correction but the scores sidecar predates it (run
-    ``poc3 score aggregate`` / ``poc3 publish``).
+    ``mc score aggregate`` / ``mc publish``).
     """
     if not entries:
         return start_row
@@ -1795,7 +1795,7 @@ def _build(
     # Update Log — inputs, freshness stamps, methodology version
     # history (Option B; absorbs the former Score Card metadata block).
     # The combined variant tabulates per-state input freshness and
-    # carries the "Workbook generated" stamp `poc3 review ingest`'s
+    # carries the "Workbook generated" stamp `mc review ingest`'s
     # stale-workbook warning scans for (issue #213 item 1 — the
     # combined workbook previously had no Update Log at all).
     if combined:
@@ -2022,7 +2022,7 @@ def _build(
         if fills:
             _write_peer_gaps_sheet(wb.create_sheet("Peer Gaps"), fills)
     # Audit Trail removed from the deliverable workbook (Option D) —
-    # the full audit surface is one command away: `poc3 report audit
+    # the full audit surface is one command away: `mc report audit
     # --state {ST} [--lens spine]` (report/audit.py). Row # stays the
     # shared cross-workbook address.
     # API Model Gaps (spine-lens per-state workbooks only) — issue #73

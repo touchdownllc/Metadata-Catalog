@@ -1,11 +1,11 @@
-"""On-demand audit workbook — `poc3 report audit` (issue #186 Option D).
+"""On-demand audit workbook — `mc report audit` (issue #186 Option D).
 
 The Audit Trail is QA/methodology-debug material (its sheet-guide
 audience was always "Engineers"), not an analyst deliverable. Option D
 removes it from the analyst workbooks; this module keeps the full
 surface ONE command away:
 
-    poc3 report audit --state TX [--lens spine]
+    mc report audit --state TX [--lens spine]
 
 writes ``data/out/{state}_audit{_spine}.xlsx`` — Readme + the full
 Audit Trail (EVERY row, documented or not: the audit surface must never

@@ -22,7 +22,7 @@ keys (``state``, ``edfi_version``, ``model``, ``prompt_version``,
 ``lens`` value of ``"spine_gap"`` so the file is self-identifying.
 
 CRITICAL: module-level ``run()`` is a plain function. The Click wrapper
-lives in ``src/poc3/cli.py``.
+lives in ``src/cli.py``.
 """
 
 from __future__ import annotations
@@ -333,7 +333,7 @@ def _load_gap_records(
     if not path.exists():
         raise FileNotFoundError(
             f"Gap artifact missing for {state}: {path}. "
-            f"Run `poc3 ingest gap --state {state}` first."
+            f"Run `mc ingest gap --state {state}` first."
         )
     payload = json.loads(path.read_text(encoding="utf-8"))
     gaps = payload.get("gaps", [])
@@ -380,8 +380,8 @@ def run(
     if not spine_p.exists():
         raise FileNotFoundError(
             f"Spine missing for {state}: {spine_p}. "
-            f"Run `poc3 spine fetch --state {state}` + "
-            f"`poc3 spine build --state {state}` first."
+            f"Run `mc spine fetch --state {state}` + "
+            f"`mc spine build --state {state}` first."
         )
     spine = StateSpine.model_validate_json(
         spine_p.read_text(encoding="utf-8")

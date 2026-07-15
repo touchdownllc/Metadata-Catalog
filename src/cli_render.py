@@ -1,7 +1,7 @@
 """CLI progress/summary renderers (issue #213 item 3).
 
 The twin per-batch progress renderers and the post-run summary echo
-blocks for ``poc3 score extract`` / ``poc3 score peer-gap`` lived
+blocks for ``mc score extract`` / ``mc score peer-gap`` lived
 inline in ``cli.py``. They are pure presentation — every string here is
 byte-identical to the pre-extraction ``cli.py`` output. ``cli.py``
 keeps only option parsing + dispatch.
@@ -13,7 +13,7 @@ import click
 
 
 # ---------------------------------------------------------------------------
-# `poc3 score extract`
+# `mc score extract`
 # ---------------------------------------------------------------------------
 
 
@@ -120,7 +120,7 @@ def print_validate_only_summary(
 
 
 # ---------------------------------------------------------------------------
-# `poc3 score peer-gap`
+# `mc score peer-gap`
 # ---------------------------------------------------------------------------
 
 
@@ -156,7 +156,7 @@ def echo_peer_gap_result(
 
 
 # ---------------------------------------------------------------------------
-# `poc3 score run-all`
+# `mc score run-all`
 # ---------------------------------------------------------------------------
 
 
@@ -209,15 +209,15 @@ def echo_batch_submission(manifests) -> None:
         )
     click.echo("\nWait ~5–60 min, then collect:")
     for m in manifests:
-        click.echo(f"  poc3 score batches collect {m.batch_id}")
+        click.echo(f"  mc score batches collect {m.batch_id}")
     click.echo(
-        "\nAfter collect, run `poc3 score run-all` (no --batch) to build "
+        "\nAfter collect, run `mc score run-all` (no --batch) to build "
         "sidecars from the populated cache."
     )
 
 
 # ---------------------------------------------------------------------------
-# `poc3 score gap-extract` / `gap-downgrade-summary`
+# `mc score gap-extract` / `gap-downgrade-summary`
 # ---------------------------------------------------------------------------
 
 
@@ -243,9 +243,9 @@ def echo_gap_extract_results(results) -> None:
         f"rate={grand_downgrades / grand_records if grand_records else 0:.4f})"
     )
     click.echo(
-        "\nNext: `poc3 score aggregate-gap --with-llm` to fold these "
+        "\nNext: `mc score aggregate-gap --with-llm` to fold these "
         "values into the gap sidecars, then "
-        "`poc3 score gap-downgrade-summary` for the halt-criterion check."
+        "`mc score gap-downgrade-summary` for the halt-criterion check."
     )
 
 

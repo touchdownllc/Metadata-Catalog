@@ -1054,7 +1054,7 @@ def _score_card_override_clusters_block(
 # golden-pinned (deterministic by construction).
 _FACT_CORRECTIONS_TITLE = "Fact corrections — human-corrected extraction inputs"
 _FACT_CORRECTIONS_SUBTITLE = (
-    "Analyst corrections to LLM-extracted facts (poc3 review "
+    "Analyst corrections to LLM-extracted facts (mc review "
     "correct-fact), clustered by fact name. A pattern here is a PROMPT "
     "weakness — route it to the prompt-version-bump path; corrections "
     "never tune extraction."

@@ -1,7 +1,7 @@
 """Reviewer-comparison summary doc generator (Phase E synthesis).
 
 Reads ``data/out/review_digest_{source,spine}.json`` (produced by
-``poc3 report review-digest``) plus a sample sidecar header for the
+``mc report review-digest``) plus a sample sidecar header for the
 ``scoring_plan_version`` stamp, and emits a stakeholder-facing markdown
 doc to ``docs/reviewer-comparison.md`` (or a path the caller picks).
 
@@ -23,7 +23,7 @@ Usage discipline (CLAUDE.md operator playbook):
   version, alongside CLAUDE.md status pointer + working-journal entry.
 
 CRITICAL: ``run()`` is a plain function; the Click wrapper lives in
-``src/poc3/cli.py``.
+``src/cli.py``.
 """
 
 from __future__ import annotations
@@ -50,7 +50,7 @@ _BUCKET_ORDER: tuple[str, ...] = (
     "tier_delta_ge2",
     "key_sever_override",
     "gap_row_match",
-    "no_poc3_row",
+    "no_mc_row",
     "no_reviewer_row",
 )
 
@@ -64,7 +64,7 @@ def _load_digest(lens: str, *, base: Path | None = None) -> dict[str, Any]:
     if not target.exists():
         raise FileNotFoundError(
             f"review digest missing: {target} — run "
-            f"`poc3 report review-digest --lens {lens}` first."
+            f"`mc report review-digest --lens {lens}` first."
         )
     return json.loads(target.read_text(encoding="utf-8"))
 
@@ -102,7 +102,7 @@ def _gap_row_stats(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
     which the digest excludes from its divergence ranking (2026-07
     digest hygiene)."""
     gap_rows = [r for r in rows if r.get("classification") == "gap_row_match"]
-    populated = [r for r in gap_rows if r.get("poc3_tier") is not None]
+    populated = [r for r in gap_rows if r.get("mc_tier") is not None]
     deltas: Counter[int] = Counter()
     agree_exact = 0
     for r in populated:
@@ -231,7 +231,7 @@ def _top_patterns_table(top_patterns: list[Mapping[str, Any]]) -> list[str]:
         sig = pat.get("signature") or {}
         ex = pat.get("example") or {}
         rt = sig.get("reviewer_tier")
-        pt = sig.get("poc3_tier")
+        pt = sig.get("mc_tier")
         rt_s = "—" if rt is None else str(rt)
         pt_s = "—" if pt is None else str(pt)
         ent = ex.get("entity") or "?"
@@ -307,7 +307,7 @@ def render_markdown(summary: Mapping[str, Any]) -> str:
         "",
         "**Refresh discipline.** This doc is regenerated each time "
         "`SCORING_PLAN_VERSION` bumps. Run "
-        "`poc3 report reviewer-comparison` after `report review-digest "
+        "`mc report reviewer-comparison` after `report review-digest "
         "--lens source` and `--lens spine` to refresh. See the operator "
         "playbook in CLAUDE.md.",
         "",
@@ -338,17 +338,17 @@ def render_markdown(summary: Mapping[str, Any]) -> str:
     lines.extend([
         "",
         "Match rate counts every classification bucket as \"matched\" "
-        "except `no_poc3_row` and `no_reviewer_row`. `gap_row_match` "
+        "except `no_mc_row` and `no_reviewer_row`. `gap_row_match` "
         "counts as matched (the row resolved to a spine-anchored gap "
         "score under issue #73 Layer 3).",
         "",
-        "**`no_poc3_row` includes present-but-undocumented rows.** "
+        "**`no_mc_row` includes present-but-undocumented rows.** "
         "Swagger-backfill and leaf-borrow rows (`documented=False` under "
         "the v21 close-out posture) are surfaced by POC-3 but never "
         "scored, and once they are present in the source lens they are no "
         "longer emitted as gaps. A reviewer row that resolves to one "
-        "therefore classifies as `no_poc3_row`, not `gap_row_match`. The "
-        "spine match rate counts rows POC-3 *scored*, not every row it is "
+        "therefore classifies as `no_mc_row`, not `gap_row_match`. The "
+        "spine match rate counts rows MC *scored*, not every row it is "
         "*aware of* — so keeping the gap pipeline current yields a "
         "strictly lower, more honest spine match rate than a stale gap "
         "sidecar that still listed those rows as gap matches. The gap "
@@ -360,7 +360,7 @@ def render_markdown(summary: Mapping[str, Any]) -> str:
         "(2026-07-01).** Rows whose entity or element cell is literally "
         "`NA` / `N/A` (18 WI rows on the per-state basis: statusCode, "
         "patientIdentifier.*, …) can never resolve to a POC-3 record "
-        "key; they would sit in `no_poc3_row` permanently, deflating "
+        "key; they would sit in `no_mc_row` permanently, deflating "
         "the match rate. Dropping them shrinks the reviewer-row "
         "denominators relative to the raw workbook row counts.",
         "",
@@ -389,7 +389,7 @@ def render_markdown(summary: Mapping[str, Any]) -> str:
         "## Gap-row match cohort (Layer 3 detail)",
         "",
         "Layer 3 (issue #73, PR #88) joins reviewer `gap_row_match` rows "
-        "against `data/out/{state}_scores_gap.json`. Where a canonical "
+        "against `data/out/{state}_scores_mc_gap.json`. Where a canonical "
         "record_key resolves, the comparison row populates POC-3 tier / "
         "adjusted score / tier delta. The classification bucket itself "
         "stays `gap_row_match` — these counts segment the bucket by "
@@ -420,7 +420,7 @@ def render_markdown(summary: Mapping[str, Any]) -> str:
     lines.append("")
     lines.append(
         "When `Populated tier` lags `Total gap rows`, the gap sidecar "
-        "coverage is incomplete — re-run `poc3 score gap-extract` and "
+        "coverage is incomplete — re-run `mc score gap-extract` and "
         "`aggregate-gap` to refresh."
     )
     lines.append("")
@@ -451,9 +451,9 @@ def render_markdown(summary: Mapping[str, Any]) -> str:
             f"## Coverage gaps — {lens} lens",
             "",
             "Reviewer rows with no comparable POC-3 score "
-            "(`no_poc3_row` + unscored gap rows) — join-coverage "
+            "(`no_mc_row` + unscored gap rows) — join-coverage "
             "facts, not rubric divergence; no response category "
-            "applies. See the `no_poc3_row` caveat above for why the "
+            "See the `no_mc_row` caveat above for why the "
             "spine bucket is structurally larger.",
             "",
         ])

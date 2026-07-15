@@ -22,7 +22,7 @@ Caching: every fetched page is written to
 to ``data/raw/in/confluence/harvested.json`` and is what ``indiana.run()``
 reads at ingest time.
 
-Entry point: ``harvest()`` (or run ``poc3 ingest in`` — the IN adapter
+Entry point: ``harvest()`` (or run ``mc ingest in`` — the IN adapter
 delegates to ``ensure_harvested()``).
 """
 

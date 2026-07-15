@@ -49,7 +49,7 @@ _ANALYST_HEADER_FILL = PatternFill(
 # a stale pre-Option-C "not yet preserved" claim for months).
 ANALYST_BAND_NOTE = (
     "Analyst-input space — the pipeline never writes in these columns. "
-    "Your entries round-trip: run `poc3 review ingest <workbook>` and "
+    "Your entries round-trip: run `mc review ingest <workbook>` and "
     "every regeneration re-applies them (curation sidecar at "
     "data/curation/{state}.json)."
 )

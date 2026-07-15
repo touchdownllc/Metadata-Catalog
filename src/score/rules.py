@@ -1668,9 +1668,9 @@ def load_fact_pool(
             raise FileNotFoundError(
                 f"fact artifact missing for ({state}, {fact}): {path}. "
                 f"Populate it with "
-                f"`poc3 score extract --state {state.upper()} --lens {lens} "
+                f"`mc score extract --state {state.upper()} --lens {lens} "
                 f"--fact {fact} --cost-cap 3.0` "
-                f"(or `poc3 score run-all --state {state.upper()} --lens {lens}` "
+                f"(or `mc score run-all --state {state.upper()} --lens {lens}` "
                 f"to fan out every fact), then rerun aggregate."
             )
         loaded.append(fact)

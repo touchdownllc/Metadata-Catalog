@@ -8,7 +8,7 @@ output per ``docs/archive/next-session/next-session-phase-e.md``. Summarizes, pe
   counterpart.
 - **Classification breakdown** — count per bucket
   (match_exact, match_tier, tier_delta_1, tier_delta_ge2,
-  in_scope_mismatch, key_sever_override, no_poc3_row, no_reviewer_row).
+  in_scope_mismatch, key_server_override, no_mc_row, no_reviewer_row).
 - **Top 10 divergence patterns** — ranked by
   ``row_count * max(1, |tier_delta|)`` so high-count same-delta
   patterns rise alongside rarer-but-larger-delta ones. Each entry
@@ -19,10 +19,10 @@ output per ``docs/archive/next-session/next-session-phase-e.md``. Summarizes, pe
   session brief). Only genuine *score* disagreements rank here:
   ``gap_row_match`` rows whose tier AND adjustment agree are
   agreement-by-another-join-path, not divergence, and coverage
-  buckets (``no_poc3_row``, unscored gap rows) are split into their
+  buckets (``no_mc_row``, unscored gap rows) are split into their
   own section (2026-07 digest hygiene — see
   ``docs/archive/next-session/next-session-digest-hygiene.md``).
-- **Coverage gaps section** — ``no_poc3_row`` + unscored
+- **Coverage gaps section** — ``no_mc_row`` + unscored
   ``gap_row_match`` clusters per state. These are join-coverage
   facts, not rubric divergence; no response category applies.
 - **Three worked examples** — one per response category, drawn from
@@ -34,7 +34,7 @@ scoring. The digest never asserts reviewer or POC-3 is "correct"; it
 names where they diverge and proposes places to look.
 
 CRITICAL: ``run()`` is a plain function; the Click wrapper lives in
-``src/poc3/cli.py``.
+``src/cli.py``.
 """
 
 from __future__ import annotations
@@ -76,7 +76,7 @@ _BUCKET_ORDER: tuple[str, ...] = (
     "in_scope_mismatch",  # retired in v10; kept at 0 for backward-compat columns.
     "key_sever_override",
     "gap_row_match",  # added 2026-04-29 (issue #73 Layer 3 production surface).
-    "no_poc3_row",
+    "no_mc_row",
     "no_reviewer_row",
 )
 
@@ -104,17 +104,17 @@ _REVIEWER_REASON_UNNECESSARY = "unnecessary"
 _REVIEWER_REASON_NA = "na"
 _REVIEWER_REASON_OTHER = "other"
 
-_POC3_REASON_UNNECESSARY = "unnecessary_ext"
-_POC3_REASON_NECESSARY = "necessary_ext"
-_POC3_REASON_FIDELITY = "fidelity_fold"
-_POC3_REASON_NONE = "none"
+_MC_REASON_UNNECESSARY = "unnecessary_ext"
+_MC_REASON_NECESSARY = "necessary_ext"
+_MC_REASON_FIDELITY = "fidelity_fold"
+_MC_REASON_NONE = "none"
 
 # "necessary_ext" is a substring of "unnecessary_ext" — guard with a
 # negative lookbehind so the necessary probe can't fire on the
 # unnecessary token.
-_POC3_UNNECESSARY_RE = re.compile(r"\bunnecessary_ext\b")
-_POC3_NECESSARY_RE = re.compile(r"(?<!un)necessary_ext\b")
-_POC3_FIDELITY_RE = re.compile(r"fidelity_divergent")
+_MC_UNNECESSARY_RE = re.compile(r"\bunnecessary_ext\b")
+_MC_NECESSARY_RE = re.compile(r"(?<!un)necessary_ext\b")
+_MC_FIDELITY_RE = re.compile(r"fidelity_divergent")
 
 
 def _reviewer_reason(justification: str | None) -> str:
@@ -135,8 +135,8 @@ def _reviewer_reason(justification: str | None) -> str:
     return _REVIEWER_REASON_OTHER
 
 
-def _poc3_reason(justification: str | None) -> str:
-    """Normalize a POC-3 ``nachos_justification`` to a reason class.
+def _mc_reason(justification: str | None) -> str:
+    """Normalize a MC ``nachos_justification`` to a reason class.
 
     Necessity tokens dominate: a row carrying both ``unnecessary_ext``
     and a fidelity fold classifies as unnecessary — the necessity axis
@@ -145,22 +145,22 @@ def _poc3_reason(justification: str | None) -> str:
     sole adjustment vocabulary.
     """
     if not justification:
-        return _POC3_REASON_NONE
-    if _POC3_UNNECESSARY_RE.search(justification):
-        return _POC3_REASON_UNNECESSARY
-    if _POC3_NECESSARY_RE.search(justification):
-        return _POC3_REASON_NECESSARY
-    if _POC3_FIDELITY_RE.search(justification):
-        return _POC3_REASON_FIDELITY
-    return _POC3_REASON_NONE
+        return _MC_REASON_NONE
+    if _MC_UNNECESSARY_RE.search(justification):
+        return _MC_REASON_UNNECESSARY
+    if _MC_NECESSARY_RE.search(justification):
+        return _MC_REASON_NECESSARY
+    if _MC_FIDELITY_RE.search(justification):
+        return _MC_REASON_FIDELITY
+    return _MC_REASON_NONE
 
 
 # Reason pairs where the two observers apply *different definitions* of
 # extension necessity — a rubric decision, not a model defect on either
 # side (320-vs-5 direction asymmetry on the 2026-07 source lens).
 _NECESSITY_CONFLICT_PAIRS = {
-    (_REVIEWER_REASON_NECESSARY, _POC3_REASON_UNNECESSARY),
-    (_REVIEWER_REASON_UNNECESSARY, _POC3_REASON_NECESSARY),
+    (_REVIEWER_REASON_NECESSARY, _MC_REASON_UNNECESSARY),
+    (_REVIEWER_REASON_UNNECESSARY, _MC_REASON_NECESSARY),
 }
 
 
@@ -177,19 +177,19 @@ def _gap_score_bucket(row: ComparisonRow) -> str | None:
     """
     if row.classification != "gap_row_match":
         return None
-    if row.reviewer_tier is None or row.poc3_tier is None:
+    if row.reviewer_tier is None or row.mc_tier is None:
         return "unscored"
-    if row.reviewer_tier == row.poc3_tier:
+    if row.reviewer_tier == row.mc_tier:
         if (
             row.reviewer_adj is not None
-            and row.poc3_adj is not None
-            and abs(row.reviewer_adj - row.poc3_adj) < 0.01
+            and row.mc_adj is not None
+            and abs(row.reviewer_adj - row.mc_adj) < 0.01
         ):
             return "match_exact"
-        if row.reviewer_adj is None and row.poc3_adj is None:
+        if row.reviewer_adj is None and row.mc_adj is None:
             return "match_exact"
         return "match_tier"
-    if abs(row.reviewer_tier - row.poc3_tier) == 1:
+    if abs(row.reviewer_tier - row.mc_tier) == 1:
         return "tier_delta_1"
     return "tier_delta_ge2"
 
@@ -230,15 +230,15 @@ def _suggested_response_category(row: ComparisonRow) -> str:
     if row.classification == "key_sever_override":
         return _RESPONSE_RUBRIC_JUDGMENT_CALL
     reviewer_reason = _reviewer_reason(row.reviewer_justification)
-    poc3_reason = _poc3_reason(row.poc3_justification)
-    if (reviewer_reason, poc3_reason) in _NECESSITY_CONFLICT_PAIRS:
+    mc_reason = _mc_reason(row.mc_justification)
+    if (reviewer_reason, mc_reason) in _NECESSITY_CONFLICT_PAIRS:
         return _RESPONSE_RUBRIC_JUDGMENT_CALL
     if (
-        poc3_reason == _POC3_REASON_FIDELITY
+        mc_reason == _MC_REASON_FIDELITY
         and reviewer_reason == _REVIEWER_REASON_NA
     ):
         return _RESPONSE_RUBRIC_JUDGMENT_CALL
-    justification = (row.reviewer_justification or "") + " " + (row.poc3_justification or "")
+    justification = (row.reviewer_justification or "") + " " + (row.mc_justification or "")
     if "extension" in justification.lower():
         return _RESPONSE_PROMPT_TWEAK
     return _RESPONSE_RULE_ADJUSTMENT
@@ -259,7 +259,7 @@ def _reason_pair(row: ComparisonRow) -> str:
         return ""
     return (
         f"R:{_reviewer_reason(row.reviewer_justification)}"
-        f" ↔ P:{_poc3_reason(row.poc3_justification)}"
+        f" ↔ P:{_mc_reason(row.mc_justification)}"
     )
 
 
@@ -267,7 +267,7 @@ def _pattern_signature(row: ComparisonRow) -> tuple[str, str, str, str, str]:
     """Coarse clustering key for pattern aggregation.
 
     ``(state, display_classification, reviewer_tier_or_blank,
-    poc3_tier_or_blank, reason_pair)`` — fine enough to cluster similar
+    mc_tier_or_blank, reason_pair)`` — fine enough to cluster similar
     divergences but coarse enough to hit meaningful counts. Excludes
     entity/element so the same tier-delta pattern across many rows in
     the same state shows up as a single row in the digest. Gap rows
@@ -275,7 +275,7 @@ def _pattern_signature(row: ComparisonRow) -> tuple[str, str, str, str, str]:
     split by the normalized justification reason pair.
     """
     rt = "" if row.reviewer_tier is None else str(row.reviewer_tier)
-    pt = "" if row.poc3_tier is None else str(row.poc3_tier)
+    pt = "" if row.mc_tier is None else str(row.mc_tier)
     return (row.state, _display_classification(row), rt, pt, _reason_pair(row))
 
 
@@ -298,7 +298,7 @@ def _divergent_rows(rows: Iterable[ComparisonRow]) -> list[ComparisonRow]:
 
     - ``match_exact`` (agreement) and ``no_reviewer_row`` (POC-3 row
       with no reviewer opinion — not a disagreement, just uncovered).
-    - ``no_poc3_row`` — join-coverage gap, not a rubric disagreement;
+    - ``no_mc_row`` — join-coverage gap, not a rubric disagreement;
       surfaces in the coverage section instead (pre-2026-07 these
       burned top-10 slots with misleading response-category hints).
     - ``gap_row_match`` rows whose score sub-bucket is ``match_exact``
@@ -306,7 +306,7 @@ def _divergent_rows(rows: Iterable[ComparisonRow]) -> list[ComparisonRow]:
       path; 104/105 of the MN source cluster that ranked #3) or
       ``unscored`` (nothing to compare; routed to coverage).
     """
-    skip = {"match_exact", "no_reviewer_row", "no_poc3_row"}
+    skip = {"match_exact", "no_reviewer_row", "no_mc_row"}
     out: list[ComparisonRow] = []
     for r in rows:
         if r.classification in skip:
@@ -323,14 +323,14 @@ def _divergent_rows(rows: Iterable[ComparisonRow]) -> list[ComparisonRow]:
 def _coverage_rows(rows: Iterable[ComparisonRow]) -> list[ComparisonRow]:
     """Reviewer rows with no comparable POC-3 score.
 
-    ``no_poc3_row`` (no join at all) plus unscored ``gap_row_match``
+    ``no_mc_row`` (no join at all) plus unscored ``gap_row_match``
     rows (gap join resolved but the gap sidecar carries no score —
     Layer-2 fallback shape). These are coverage facts, not rubric
     divergence.
     """
     out: list[ComparisonRow] = []
     for r in rows:
-        if r.classification == "no_poc3_row":
+        if r.classification == "no_mc_row":
             out.append(r)
         elif (
             r.classification == "gap_row_match"
@@ -375,7 +375,7 @@ def top_divergence_patterns(
         # justifications are populated so the worked-example section
         # doesn't print a pair of blanks.
         example = next(
-            (r for r in cluster if r.reviewer_justification and r.poc3_justification),
+            (r for r in cluster if r.reviewer_justification and r.mc_justification),
             rep,
         )
         patterns.append(
@@ -384,24 +384,24 @@ def top_divergence_patterns(
                     "state": signature[0],
                     "classification": signature[1],
                     "reviewer_tier": int(signature[2]) if signature[2] else None,
-                    "poc3_tier": int(signature[3]) if signature[3] else None,
+                    "mc_tier": int(signature[3]) if signature[3] else None,
                     "reason_pair": signature[4] or None,
                 },
                 "count": count,
                 "weight": weight,
                 "suggested_response": _suggested_response_category(example),
                 "example": {
-                    "entity": example.reviewer_entity or example.poc3_record_key,
+                    "entity": example.reviewer_entity or example.mc_record_key,
                     "element": example.reviewer_element
-                    or (example.poc3_record_key or "").split("|", 2)[-1],
-                    "record_key": example.poc3_record_key,
+                    or (example.mc_record_key or "").split("|", 2)[-1],
+                    "record_key": example.mc_record_key,
                     "reviewer_tier": example.reviewer_tier,
                     "reviewer_adj": example.reviewer_adj,
                     "reviewer_justification": example.reviewer_justification,
-                    "poc3_tier": example.poc3_tier,
-                    "poc3_adj": example.poc3_adj,
-                    "poc3_justification": example.poc3_justification,
-                    "poc3_in_scope": example.poc3_in_scope,
+                    "mc_tier": example.mc_tier,
+                    "mc_adj": example.mc_adj,
+                    "mc_justification": example.mc_justification,
+                    "mc_in_scope": example.mc_in_scope,
                 },
             }
         )
@@ -431,7 +431,7 @@ def coverage_patterns(rows: list[ComparisonRow]) -> list[dict[str, Any]]:
         cluster = by_state[state]
         entity_counts = Counter(r.reviewer_entity or "?" for r in cluster)
         buckets = Counter(
-            "no_poc3_row" if r.classification == "no_poc3_row" else "gap_row_unscored"
+            "no_mc_row" if r.classification == "no_mc_row" else "gap_row_unscored"
             for r in cluster
         )
         example = next(
@@ -670,7 +670,7 @@ def render_digest_md(digest: dict[str, Any]) -> str:
         "cluster of rows with the same (state, classification, reviewer "
         "tier, POC-3 tier, reason pair) signature. Only score "
         "disagreements rank here — agreement rows (including gap rows "
-        "that agree exactly) and coverage gaps (`no_poc3_row`, unscored "
+        "that agree exactly) and coverage gaps (`no_mc_row`, unscored "
         "gap rows — see the coverage section) never appear. The "
         "**suggested response** is a heuristic hint (prompt tweak / rule "
         "adjustment / rubric judgment call) — the user decides._"
@@ -689,7 +689,7 @@ def render_digest_md(digest: dict[str, Any]) -> str:
             else "—"
         )
         tier_label = (
-            f"{_fmt_tier(sig['reviewer_tier'])} → {_fmt_tier(sig['poc3_tier'])}"
+            f"{_fmt_tier(sig['reviewer_tier'])} → {_fmt_tier(sig['mc_tier'])}"
         )
         lines.append(
             "| "
@@ -714,13 +714,13 @@ def render_digest_md(digest: dict[str, Any]) -> str:
     lines.append("## Coverage gaps — not rubric divergence")
     lines.append("")
     lines.append(
-        "_Reviewer rows with no comparable POC-3 score: `no_poc3_row` "
+        "_Reviewer rows with no comparable MC score: `no_mc_row` "
         "(no join at all) plus gap-joined rows the gap sidecar never "
         "scored. These are join-coverage facts — documentation and "
         "enumeration gaps, deferred gap-surfacer follow-ups, or rows "
         "outside the swagger spine — NOT scoring disagreements, so no "
         "response category applies. Population triage lives in "
-        "`docs/reviewer-comparison.md` (see the `no_poc3_row` caveat) "
+        "`docs/reviewer-comparison.md` (see the `no_mc_row` caveat) "
         "and the June follow-up analyses; on the spine lens this bucket "
         "additionally holds present-but-unscored swagger-backfill / "
         "leaf-borrow rows (v21 posture)._"
@@ -772,12 +772,12 @@ def render_digest_md(digest: dict[str, Any]) -> str:
             f"adj={_fmt_adj(ex['reviewer_adj'])}"
         )
         lines.append(
-            f"- **POC-3:** tier={_fmt_tier(ex['poc3_tier'])} · "
-            f"adj={_fmt_adj(ex['poc3_adj'])} · "
-            f"in_scope={ex['poc3_in_scope']}"
+            f"- **MC:** tier={_fmt_tier(ex['mc_tier'])} · "
+            f"adj={_fmt_adj(ex['mc_adj'])} · "
+            f"in_scope={ex['mc_in_scope']}"
         )
         lines.append(f"- **Reviewer justification:** {_fmt_justification(ex['reviewer_justification'])}")
-        lines.append(f"- **POC-3 justification:** {_fmt_justification(ex['poc3_justification'])}")
+        lines.append(f"- **MC justification:** {_fmt_justification(ex['mc_justification'])}")
         lines.append(f"- **Pattern count:** {pat['count']} rows share this signature")
         lines.append("")
 
@@ -815,7 +815,7 @@ def comparison_row_to_dict(row: ComparisonRow) -> dict[str, Any]:
 
     The derived fields are additive (downstream jq consumers keep
     working): ``gap_score_bucket`` (gap rows only — the score-agreement
-    sub-bucket), ``reviewer_reason`` / ``poc3_reason`` (the normalized
+    sub-bucket), ``reviewer_reason`` / ``mc_reason`` (the normalized
     justification classes the reason-pair clustering uses).
     """
     payload = asdict(row)
@@ -823,7 +823,7 @@ def comparison_row_to_dict(row: ComparisonRow) -> dict[str, Any]:
     if bucket is not None:
         payload["gap_score_bucket"] = bucket
     payload["reviewer_reason"] = _reviewer_reason(row.reviewer_justification)
-    payload["poc3_reason"] = _poc3_reason(row.poc3_justification)
+    payload["mc_reason"] = _mc_reason(row.mc_justification)
     return payload
 
 

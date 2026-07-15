@@ -19,7 +19,7 @@ Design rules:
   ``columns_factory`` instead.
 - **``Row #`` is NOT a ColumnSpec.** It stays a renderer-injected
   leading column (``SheetSpec.row_number_column``) so
-  ``human_score_backfill._POC3_HEADERS`` — derived from the source-lens
+  ``human_score_backfill._MC_HEADERS`` — derived from the source-lens
   header tuple — can never grow an ``ai-Row #``.
 - Value-group helpers (``_score_fields`` etc.) moved here verbatim from
   ``analyst.py`` (which re-exports them); their behavior is pinned by
@@ -690,7 +690,7 @@ def evidence_from_score(score: dict | None) -> CellValue:
     """First validated span from the decision-driving facts (affirmative
     values only) + a count pointer at the rest — compactness is the
     analysts' revealed preference; the full spans live on the audit
-    workbook (`poc3 report audit`).
+    workbook (`mc report audit`).
 
     Score-dict-level so non-RowContext surfaces (the Review Queue sheet
     builder) can reuse it.
@@ -860,7 +860,7 @@ def _analyst_input_col(
         width=width,
         doc=(
             "Analyst-input space — the pipeline never writes here; "
-            "entries round-trip via `poc3 review ingest` and are "
+            "entries round-trip via `mc review ingest` and are "
             "re-applied on every regeneration (curation sidecar at "
             "data/curation/{state}.json)."
         ),
@@ -949,7 +949,7 @@ DETAILS_COLUMNS: tuple[ColumnSpec, ...] = (
         _x_effective_score,
         role="score", number_format="0.0", width=14,
         doc=(
-            "Team-consensus adjudicated score (`poc3 review adjudicate`) "
+            "Team-consensus adjudicated score (`mc review adjudicate`) "
             "— blank unless a FRESH adjudication exists for this lens, so "
             "machine output is never mistaken for human-ratified output. "
             "Stale adjudications (engine or plan moved since the "
@@ -979,7 +979,7 @@ DETAILS_COLUMNS: tuple[ColumnSpec, ...] = (
         role="score", width=60, legend="RULE_MEANINGS",
         doc=(
             "Prose sentence: base rule path + adjustments (raw tokens "
-            "survive on the audit workbook only — poc3 report audit)."
+            "survive on the audit workbook only — mc report audit)."
         ),
     ),
     ColumnSpec(
@@ -1767,7 +1767,7 @@ AUDIT_TRAIL_SHEET = SheetSpec(
         "Wide per-record audit — every fact, span, dimension tier, "
         "rule path, and downgrade flag on one row. The 'why this score' "
         "surface. Lives in its own on-demand workbook: "
-        "`poc3 report audit --state {ST}` (Option D — no longer an "
+        "`mc report audit --state {ST}` (Option D — no longer an "
         "analyst-workbook sheet).",
         "Engineers / methodology debug",
     ),
@@ -2446,12 +2446,12 @@ COMMITMENT_TRACKER_COLUMNS: tuple[ColumnSpec, ...] = (
         doc="Quality-axis recommendations on the same row (0 points).",
     ),
     # Analyst-owned commitment columns — same round-trip mechanism as
-    # the Details band (`poc3 review ingest` reads this sheet too).
+    # the Details band (`mc review ingest` reads this sheet too).
     ColumnSpec(
         "adoption_timeline", "Adoption Timeline",
         _item("adoption_timeline"), role="analyst_input", width=20,
         doc="Analyst-input: the state's committed adoption window "
-            "(round-trips via `poc3 review ingest`).",
+            "(round-trips via `mc review ingest`).",
     ),
     ColumnSpec(
         "commitment_status", "Commitment Status",
@@ -2474,7 +2474,7 @@ COMMITMENT_TRACKER_SHEET = SheetSpec(
         "base-tier points only; adjustments remain — Reason says so), "
         "per-entity subtotals, and a Grand Total what-if over the Score "
         "Card population. Green columns are yours — they round-trip via "
-        "`poc3 review ingest`.",
+        "`mc review ingest`.",
         "Analysts (state negotiation)",
     ),
     # No autofilter — subtotal rows inside a filter range mis-sort

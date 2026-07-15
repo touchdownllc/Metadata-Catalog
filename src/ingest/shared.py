@@ -728,7 +728,7 @@ def _entity_domain(entity_name: str, spine: StateSpine) -> str:
        the longest CamelCase-aligned prefix and has non-empty domains.
 
     Mirrors the workbook-side helper at
-    ``src/poc3/report/analyst.py::_edfi_domain_for`` and extends it with
+    ``src/report/analyst.py::_edfi_domain_for`` and extends it with
     the sibling fallback so swagger-backfilled rows always surface with a
     real domain rather than an empty string.
     """

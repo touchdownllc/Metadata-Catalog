@@ -406,7 +406,7 @@ def report_reviewer_comparison() -> None:
     Reads ``data/out/review_digest_{source,spine}.json`` plus one source-
     lens sidecar per state for the ``scoring_plan_version`` stamp and
     writes the committed ``docs/reviewer-comparison.md`` summary doc.
-    Run after ``poc3 report review-digest --lens source`` and ``--lens
+    Run after ``mc report review-digest --lens source`` and ``--lens
     spine`` complete; commit the regenerated doc on the same PR that
     bumps ``SCORING_PLAN_VERSION`` (CLAUDE.md operator playbook).
     """
@@ -427,7 +427,7 @@ def report_divergence(allow_stale: bool) -> None:
     """Write data/out/lens_divergence.{json,md} — cross-lens comparison per state.
 
     Requires both {state}_elements_source.json and {state}_elements_spine.json
-    for each state (regenerate with `poc3 ingest <state>` if missing).
+    for each state (regenerate with `mc ingest <state>` if missing).
     """
     from src.report.divergence import run as run_divergence
     run_divergence(allow_stale=allow_stale)
@@ -457,7 +457,7 @@ def _run_human_score_backfill(config_name: str, output_path: Path | None) -> Non
         "Which per-state human-scored workbook to overlay (see "
         "human_score_backfill.CONFIGS — derived from "
         "review_loader.REVIEWER_SOURCES, the docs/human-scored-files/ "
-        "basis). Each writes data/out/{name}_with_poc3_scores.xlsx."
+        "basis). Each writes data/out/{name}_with_mc_scores.xlsx."
     ),
 )
 @click.option(
@@ -839,7 +839,7 @@ def score_estimate(
     help=(
         "Submit cache-miss prompts to the Anthropic Messages Batch API "
         "(50%% off, 24h SLA) instead of the synchronous API path. Prints "
-        "the batch_id(s) and exits — collect with `poc3 score batches "
+        "the batch_id(s) and exits — collect with `mc score batches "
         "collect <batch_id>` once Anthropic finishes. No artifacts "
         "are written by submit; the next normal `score run-all` builds "
         "sidecars from the (now cached) responses at $0 LLM."
@@ -941,7 +941,7 @@ def score_run_all(
         if not manifests:
             click.echo(
                 "All prompts already cached — no batch submitted. Run "
-                "`poc3 score run-all` (no --batch) to build sidecars from cache."
+                "`mc score run-all` (no --batch) to build sidecars from cache."
             )
             return
         echo_batch_submission(manifests)
@@ -1162,7 +1162,7 @@ def score_gap_extract(
     Sampled rows feed through the existing `extract.run()` pipeline;
     artifacts land under `data/out/scoring/phase_a_gap/` so they cannot
     collide with the source/spine artifacts under `phase_a/`. Re-run
-    `poc3 score aggregate-gap --with-llm` afterward to fold the new LLM
+    `mc score aggregate-gap --with-llm` afterward to fold the new LLM
     values into the gap sidecars.
     """
     from src.score.gap_extract import run_all as run_all_gap_extract
@@ -1199,7 +1199,7 @@ def score_gap_downgrade_summary(state_opt: str) -> None:
 
     if not summary["states_loaded"]:
         click.echo("No gap-extract artifacts found.")
-        click.echo("  Run `poc3 score gap-extract` first.")
+        click.echo("  Run `mc score gap-extract` first.")
         return
 
     echo_gap_downgrade_summary(summary)
@@ -1298,13 +1298,13 @@ def score_peer_gap(
 def score_batches() -> None:
     """Anthropic Messages Batch API helpers (list / status / collect).
 
-    Use ``poc3 score run-all --batch`` to submit. The commands here
+    Use ``mc score run-all --batch`` to submit. The commands here
     manage the lifecycle of a batch once Anthropic has accepted it:
 
     \b
-      poc3 score batches list             # show submitted manifests
-      poc3 score batches status <id>      # fetch live processing_status
-      poc3 score batches collect <id>     # write results through cache
+      mc score batches list             # show submitted manifests
+      mc score batches status <id>      # fetch live processing_status
+      mc score batches collect <id>     # write results through cache
     """
 
 
@@ -1350,7 +1350,7 @@ def score_batches_status(batch_id: str) -> None:
 def score_batches_collect(batch_id: str, model: str | None) -> None:
     """Fetch results for ``batch_id`` and write through the cache.
 
-    After this command, run ``poc3 score run-all`` (no --batch) to
+    After this command, run ``mc score run-all`` (no --batch) to
     build sidecars from the populated cache at $0 LLM. Failed items
     (errored / parse_failed / canceled / expired) are not cached;
     a sync re-run picks them up automatically.
@@ -1509,7 +1509,7 @@ def review_ingest(workbook: Path, author: str | None, dry_run: bool) -> None:
     them against the elements artifact, and merges non-blank values into
     the per-state curation sidecar (newest-wins per column, prior values
     kept in history; blank cells never clear stored values). Every
-    ``poc3 report analyst`` regeneration re-applies the sidecar, so
+    ``mc report analyst`` regeneration re-applies the sidecar, so
     workbook regeneration stops destroying analyst work (issue #186
     Option C / design §8.4).
     """
@@ -1656,7 +1656,7 @@ def review_correct_fact(
 
     Writes a `facts` block into data/curation/{state}.json with full
     provenance (author, rationale, the prior extracted value and plan
-    version at correction time). The next `poc3 score aggregate` run
+    version at correction time). The next `mc score aggregate` run
     overlays the corrected value onto the fact pool BEFORE the rule
     cascade runs, so the score recomputes for a reason the audit trail
     fully explains — the fact's sidecar provenance becomes
@@ -1685,7 +1685,7 @@ def review_correct_fact(
 
 
 def main() -> None:
-    """Console-script entry point for `poc3` and `python -m poc3`.
+    """Console-script entry point for `mc` and `python -m mc`.
 
     Loads a repo-root `.env` (if present) before dispatching so that
     `ANTHROPIC_API_KEY` and any future secrets don't need to be exported
@@ -1696,7 +1696,7 @@ def main() -> None:
     from dotenv import load_dotenv
 
     load_dotenv(dotenv_path=Path(__file__).resolve().parents[2] / ".env", override=False)
-    cli(prog_name="poc3")
+    cli(prog_name="mc")
 
 
 if __name__ == "__main__":

@@ -35,7 +35,7 @@ Public surface:
 - ``render_markdown(result, hero_n=4)`` — human-readable digest.
 - ``run(...)`` — dual-writes ``data/out/{state}_recommendations.
   {json,md}``. CRITICAL: plain function, NOT ``@click.command``. The
-  Click wrapper lives in ``src/poc3/cli.py``.
+  Click wrapper lives in ``src/cli.py``.
 """
 
 from __future__ import annotations

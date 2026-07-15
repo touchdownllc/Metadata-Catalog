@@ -35,7 +35,7 @@ values.
 best-effort matcher, not a proof. Where conventions diverge (e.g. MN
 Mapping Matrix doesn't enumerate ``calendarCode``), the reviewer row
 falls through to ``None`` and the comparison pipeline buckets it as
-``no_poc3_row``. That's the signal — don't paper over it with fuzzy
+``no_mc_row``. That's the signal — don't paper over it with fuzzy
 string matching.
 
 Match-rate expectations measured against the 2026-04-23 sidecars
@@ -48,9 +48,9 @@ Match-rate expectations measured against the 2026-04-23 sidecars
 
 MN reflects Mapping-Matrix coverage thinness; TX-spine reflects the
 TEA-extension-only spine scope. Both are real coverage signal, not
-naming mismatch — they belong in the ``no_poc3_row`` bucket. The
+naming mismatch — they belong in the ``no_mc_row`` bucket. The
 ``{ref}Reference`` rule recovered 17 MN-source rows previously lost to
-naming — the remainder of MN's ``no_poc3_row`` volume is reviewer
+naming — the remainder of MN's ``no_mc_row`` volume is reviewer
 enumeration of Ed-Fi swagger sub-collections (``studentIndicators.*``,
 ``addresses.*``, ``disabilities.*``) that the MN Mapping Matrix
 genuinely does not document.
@@ -108,7 +108,7 @@ def reviewer_element_candidates(element: str) -> list[str]:
     """All lowercased element forms to try when matching to a POC-3 key.
 
     Returned in **priority order** — more-specific candidates first,
-    broader fallbacks last — so ``reviewer_key_to_poc3_key`` prefers
+    broader fallbacks last — so ``reviewer_key_to_mc_key`` prefers
     the most semantically faithful match when multiple POC-3 records
     are compatible. E.g. WI ``StudentSchoolAssociation`` has both
     ``schoolId`` and ``schoolReference``; the reviewer's
@@ -290,7 +290,7 @@ def reviewer_element_candidates(element: str) -> list[str]:
 #   `ActualDisciplineActionLength`, AZ `GerenationCodeSuffix` ←
 #   `GenerationCodeSuffix`) join here rather than the prompt — the
 #   reviewer file is read-only and we adapt the join.
-_REVIEWER_TO_POC3_SYNONYMS: dict[
+_REVIEWER_TO_MC_SYNONYMS: dict[
     str, dict[tuple[str, str], tuple[str, str]]
 ] = {
     "WI": {
@@ -502,16 +502,16 @@ _REVIEWER_TO_POC3_SYNONYMS: dict[
 }
 
 
-def build_poc3_lookup(
+def build_mc_lookup(
     scores: Iterable[dict],
     *,
     state: str | None = None,
 ) -> dict[tuple[str, str], str]:
-    """Build ``(normalized_entity, lowered_element_alias) → record_key``.
+    """Build ``(normalized_entity, lowered_element_alias) → record_key`` for MC sidecar.
 
     Registers the direct key PLUS every form returned by
     ``element_aliases`` for the element, so reviewer-side candidates
-    that land on any alias resolve to the POC-3 key. Collisions favor
+    that land on any alias resolve to the MC key. Collisions favor
     the first-registered key — ``dict.setdefault`` keeps the mapping
     deterministic (input order is stable because sidecars are
     sorted by record_key at write time).
@@ -521,7 +521,7 @@ def build_poc3_lookup(
     ``src.score.aggregate._scored_record_to_dict``.
 
     When ``state`` is provided AND the state has a curated synonym map
-    in ``_REVIEWER_TO_POC3_SYNONYMS``, a second pass registers each
+    in ``_REVIEWER_TO_MC_SYNONYMS``, a second pass registers each
     ``(reviewer_entity, reviewer_element) → record_key`` mapping by
     resolving the synonym target against the already-built lookup.
     Synonym entries whose target isn't in the sidecar are silently
@@ -557,7 +557,7 @@ def build_poc3_lookup(
     # Pattern D synonym pass — runs after the flat alias registration so
     # curated synonyms never override an exact-name match.
     if state:
-        synonyms = _REVIEWER_TO_POC3_SYNONYMS.get(state.upper(), {})
+        synonyms = _REVIEWER_TO_MC_SYNONYMS.get(state.upper(), {})
         for (rev_entity, rev_element), (tgt_entity, tgt_element) in synonyms.items():
             tgt_key = lookup.get(
                 (entity_match_form(tgt_entity), tgt_element.lower())
@@ -933,7 +933,7 @@ def _resolve_via_subentity_scatter(
     Discipline: only fires when the merged parent's sub-collection
     actually carries the leaf as a property AND the derived child
     record exists in the lookup. ``setdefault``-style miss cascade
-    keeps the keymap's "fall through to no_poc3_row honestly" posture
+    keeps the keymap's "fall through to no_mc_row honestly" posture
     on genuine source-doc gaps.
     """
     cleaned = _strip_trailing_paren(_strip_reviewer_prefix(element.strip())) or element.strip()
@@ -966,16 +966,16 @@ def _resolve_via_subentity_scatter(
     return None
 
 
-def reviewer_key_to_poc3_key(
+def reviewer_key_to_mc_key(
     entity: str,
     element: str,
     lookup: dict[tuple[str, str], str],
     spine: SpineIndex | None = None,
 ) -> str | None:
-    """Look up the first POC-3 ``record_key`` matching a reviewer pair.
+    """Look up the first MC ``record_key`` matching a reviewer pair.
 
     Returns ``None`` when no candidate resolves — callers surface this
-    as the ``no_poc3_row`` comparison bucket.
+    as the ``no_mc_row`` comparison bucket.
 
     When ``spine`` is provided, three walker paths fire on direct-cascade
     miss (in order):

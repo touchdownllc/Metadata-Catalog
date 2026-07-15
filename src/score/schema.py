@@ -219,7 +219,7 @@ FACT_SOURCE_FILTERS: dict[str, tuple[str, ...]] = {
 def parse_fact_value(fact: str, raw: str) -> bool | int | str:
     """Parse + validate a human-supplied fact value (issue #249).
 
-    The validation seam for ``poc3 review correct-fact``: an analyst
+    The validation seam for ``mc review correct-fact``: an analyst
     correction can never write a value this schema would have rejected
     from the model. Typing follows the same registries the extract
     harness uses — enum facts validate against ``ENUM_VALUED_FACTS``,

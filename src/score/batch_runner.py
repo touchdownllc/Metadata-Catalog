@@ -163,7 +163,7 @@ def _estimate_cost_usd(items: list[BatchItem], *, model: str) -> float:
     anchor, same as ``src.score.estimate``). The estimate's ±40%
     band is not propagated here — the cost gate is binary (exceed or
     not), so the point estimate is sufficient. Operators who want a
-    band can run ``poc3 score estimate`` separately first.
+    band can run ``mc score estimate`` separately first.
     """
     total_in = sum(it.estimated_tokens_in for it in items)
     total_out_estimate = math.ceil(total_in * OUTPUT_RATIO_ANCHOR)

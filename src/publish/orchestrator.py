@@ -1,4 +1,4 @@
-"""`poc3 publish` — one command for the whole refresh chain (R1).
+"""`mc publish` — one command for the whole refresh chain (R1).
 
 Runs the stage registry in order, in-process, with:
 
@@ -10,7 +10,7 @@ Runs the stage registry in order, in-process, with:
 - **stop-the-line**: the first failing stage aborts the run (continuing
   past a failed producer manufactures the stale-composite incident
   class this command exists to kill — PR #182); the error names the
-  resume command (``poc3 publish --from <stage>``).
+  resume command (``mc publish --from <stage>``).
 - **LLM gate**: before the first live LLM stage, confirm cost class +
   cap unless ``--yes``; cumulative spend tracked against ``--cost-cap``.
 - **freshness manifest**: every produced artifact recorded with its
@@ -96,7 +96,7 @@ class PublishResult:
         elif self.failed:
             lines.append(
                 f"FAILED at '{self.failed}' — resume with: "
-                f"poc3 publish --from {self.failed}"
+                f"mc publish --from {self.failed}"
             )
         else:
             lines.append(

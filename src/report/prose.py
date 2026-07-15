@@ -252,7 +252,7 @@ KNOWN_LIMITATIONS: tuple[tuple[str, str, str, tuple[str, ...]], ...] = (
         "premise but are now lifted per-state where the team has source "
         "documentation (the v27 scope broadening — ADR 0007 — reverses the "
         "SIS-never-populated call for those (state, domain) pairs). The "
-        "spine-lens applies the filter via `src/poc3/ingest/domain_filter.py`, "
+        "spine-lens applies the filter via `src/ingest/domain_filter.py`, "
         "gated on `ingest.domain_scope` (domain-map subset rule + explicit "
         "concept-anchor list for mixed-domain entities like LearningStandard "
         "and GradebookEntry + entity-name prefix fallback).",
@@ -354,7 +354,7 @@ KNOWN_LIMITATIONS: tuple[tuple[str, str, str, tuple[str, ...]], ...] = (
         "ingest.",
         "TWEDS v33 is the current reporting-year standard as of 2026-04. "
         "Upgrades are mechanical — bump `TWEDS_VERSION` in "
-        "`src/poc3/ingest/tx_tweds.py`, clear the cache, re-run `poc3 "
+        "`src/ingest/tx_tweds.py`, clear the cache, re-run `mc "
         "ingest tx`.",
         ("TX",),
     ),

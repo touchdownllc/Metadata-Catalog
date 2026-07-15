@@ -13,7 +13,7 @@ header name** per ``ReviewerSource`` entry, never by fixed index.
 externally-supplied artifacts that live under ``docs/human-scored-files/``
 (gitignored) only on workstations where they have been hand-placed. A
 fresh clone of main will not have them, and the Phase E CLI surfaces
-(``poc3 report review-digest``) will raise ``FileNotFoundError`` until
+(``mc report review-digest``) will raise ``FileNotFoundError`` until
 they are provided out-of-band. Loading is all-or-nothing: a partial
 file set would produce silently misleading totals, so ANY missing file
 refuses with the full list. Files in the same directory that are NOT in
@@ -30,12 +30,12 @@ or referenced from a rule / prompt / test fixture. The reviewer is
 
 Duplicate (entity, element) rows inside a workbook (WI 21, TX 14,
 IN 14) each load as their own ``ReviewerRecord`` and join independently
-— the comparison layer's ``matched_poc3_keys`` set keeps
+— the comparison layer's ``matched_mc_keys`` set keeps
 ``no_reviewer_row`` accounting safe, and deduping here would silently
 hide reviewer-side re-scores.
 
 CRITICAL: ``run()`` is a plain function; the Click wrapper lives in
-``src/poc3/cli.py``.
+``src/cli.py``.
 """
 
 from __future__ import annotations
@@ -410,7 +410,7 @@ def _identity_str(value: Any) -> str | None:
     Treats the literal ``NA`` / ``N/A`` placeholders the reviewer files
     use for identity cells as missing: such rows are unjoinable by
     construction (no POC-3 record key can ever resolve them) and would
-    silently deflate the match rate as permanent ``no_poc3_row``
+    silently deflate the match rate as permanent ``no_mc_row``
     entries (17 WI rows on the current basis: statusCode,
     patientIdentifier.*, …).
     """

@@ -657,7 +657,7 @@ def run() -> None:
     if not _MN_SPINE_PATH.exists():
         raise FileNotFoundError(
             f"No MN spine at {_MN_SPINE_PATH}. "
-            f"Run `poc3 spine fetch --state MN` + `poc3 spine build --state MN` first."
+            f"Run `mc spine fetch --state MN` + `mc spine build --state MN` first."
         )
     spine = StateSpine.model_validate_json(_MN_SPINE_PATH.read_text(encoding="utf-8"))
     logger.info(

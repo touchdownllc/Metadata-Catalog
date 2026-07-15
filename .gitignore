@@ -21,7 +21,7 @@ data/bootstrap/
 data/spine/*
 # …except the Ed-Fi domain map — canonical snapshot committed so fresh clones
 # can build WI/MN spines without re-fetching AZ's swagger first. Regenerate
-# via `poc3 spine domain-map --source AZ`.
+# via `mc spine domain-map --source AZ`.
 !data/spine/edfi_domain_map.json
 
 # Excel lockfiles

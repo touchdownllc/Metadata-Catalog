@@ -18,9 +18,9 @@ human-scored basis (2026-07-07; ``review_loader.REVIEWER_SOURCES`` is
 the single source of truth for filenames, sheets, and column headers —
 ``CONFIGS`` is DERIVED from it, so the digest pipeline and this overlay
 engine can never drift apart on how a workbook is read). All dispatched
-through the single ``poc3 report human-overlay --config <name>`` CLI
+through the single ``mc report human-overlay --config <name>`` CLI
 command: ``arizona`` / ``wisconsin`` / ``minnesota`` / ``texas`` /
-``indiana``, each writing ``data/out/{name}_with_poc3_scores.xlsx``.
+``indiana``, each writing ``data/out/{name}_with_mc_scores.xlsx``.
 The former ``training-20pct`` / ``training-file`` / ``nachos-arizona``
 configs (the single-training-file era) retired with the basis change.
 
@@ -28,7 +28,7 @@ All deliverables go to ``data/out/`` and are gitignored — attach
 manually to the relevant email/Slack thread.
 
 CRITICAL: module-level ``run()`` is plain — Click wrapper lives in
-``src/poc3/cli.py`` (CLAUDE.md operational gotcha).
+``src/cli.py`` (CLAUDE.md operational gotcha).
 
 Phase E framing — back-fill is one-way. POC-3 cells are written into a
 copy of the human input; no human signal flows back into rules /
@@ -72,8 +72,8 @@ from src.score.review_comparison import (
 )
 from src.score.review_keymap import (
     SpineIndex,
-    build_poc3_lookup,
-    reviewer_key_to_poc3_key,
+    build_mc_lookup,
+    reviewer_key_to_mc_key,
 )
 from src.score.review_loader import (
     HUMAN_SCORED_DIR,
@@ -96,7 +96,7 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # an `AI: ` display prefix keep their historical bare `ai-` names
 # (`AI: Needs Review` → `ai-Needs Review`) instead of double-prefixing.
 _AI_PREFIX = "ai-"
-_POC3_HEADERS: tuple[str, ...] = tuple(
+_MC_HEADERS: tuple[str, ...] = tuple(
     f"{_AI_PREFIX}{c.header.removeprefix('AI: ')}"
     for c in backfill_columns("source")
 )
@@ -240,7 +240,7 @@ def config_from_reviewer_source(source: ReviewerSource) -> BackfillConfig:
         name=source.key,
         input_path=HUMAN_SCORED_DIR / source.filename,
         sheet_name=source.sheet_name,
-        output_path=out_dir() / f"{source.key}_with_poc3_scores.xlsx",
+        output_path=out_dir() / f"{source.key}_with_mc_scores.xlsx",
         state_col=-1,
         entity_col=-1,
         element_col=-1,
@@ -373,7 +373,7 @@ class _ResolvedRow:
     state_code: str | None  # Normalized POC-3 code or None.
     in_scope: bool          # state_code in _IN_SCOPE_STATES (the roster).
     matched: bool           # Resolved to a sidecar row (source-lens OR gap).
-    poc3_cells: list[Any]   # Length == len(_POC3_HEADERS); blank when unmatched.
+    mc_cells: list[Any]   # Length == len(_MC_HEADERS); blank when unmatched.
     record_key: str | None = None  # Sidecar key when matched (issue #147 leaf-recovery accounting).
     via_gap: bool = False   # Resolved against the spine-anchored gap artifact, not the source sidecar.
 
@@ -526,7 +526,7 @@ def _load_state_context(
     record_by_key = {
         _record_key(state, r): r for r in elements.elements
     }
-    lookup = build_poc3_lookup(scores_list, state=state)
+    lookup = build_mc_lookup(scores_list, state=state)
     spine_index = SpineIndex.from_catalog(
         json.loads(spine_path.read_text(encoding="utf-8")).get("catalog", {})
     )
@@ -568,9 +568,9 @@ def _resolve_row(
     *,
     fixed_state: str | None = None,
 ) -> _ResolvedRow:
-    """Project one origin row to its ai-cells (`len(_POC3_HEADERS)`),
+    """Project one origin row to its ai-cells (`len(_MC_HEADERS)`),
     blank when unmatched."""
-    blank = [None] * len(_POC3_HEADERS)
+    blank = [None] * len(_MC_HEADERS)
     if fixed_state is not None:
         state_code: str | None = fixed_state
     elif origin.state_raw is None:
@@ -582,7 +582,7 @@ def _resolve_row(
     ctx = contexts.get(state_code)
     if ctx is None or origin.entity is None or origin.element is None:
         return _ResolvedRow(origin, state_code, True, False, blank)
-    record_key = reviewer_key_to_poc3_key(
+    record_key = reviewer_key_to_mc_key(
         origin.entity, origin.element, ctx.lookup, spine=ctx.spine_index
     )
     if record_key is None:
@@ -598,8 +598,8 @@ def _resolve_row(
     score = ctx.scores_by_key.get(record_key)
     is_ext = _is_extension_record(record)
     ed_domain = ctx.domain_cache.get(record.entity)
-    poc3_cells = _ai_cells(record, state_code, is_ext, ed_domain, score)
-    return _ResolvedRow(origin, state_code, True, True, poc3_cells, record_key)
+    mc_cells = _ai_cells(record, state_code, is_ext, ed_domain, score)
+    return _ResolvedRow(origin, state_code, True, True, mc_cells, record_key)
 
 
 def _resolve_via_gap(
@@ -620,7 +620,7 @@ def _resolve_via_gap(
     ``human_only`` behavior) when the gap artifact doesn't resolve the pair
     or carries no scored entry for it.
     """
-    blank = [None] * len(_POC3_HEADERS)
+    blank = [None] * len(_MC_HEADERS)
     gap_hit = _gap_lookup_resolve(origin.entity, origin.element, ctx.gap_lookup)
     if gap_hit is None:
         return _ResolvedRow(origin, state_code, True, False, blank)
@@ -644,9 +644,9 @@ def _resolve_via_gap(
     record = record.model_copy(update={"documentation_source": "swagger"})
     is_ext = _is_extension_record(record)
     ed_domain = ctx.domain_cache.get(record.entity)
-    poc3_cells = _ai_cells(record, state_code, is_ext, ed_domain, gap_score)
+    mc_cells = _ai_cells(record, state_code, is_ext, ed_domain, gap_score)
     return _ResolvedRow(
-        origin, state_code, True, True, poc3_cells, canonical_key, via_gap=True
+        origin, state_code, True, True, mc_cells, canonical_key, via_gap=True
     )
 
 
@@ -678,7 +678,7 @@ def _write_details_sheet(
     full_headers = list(origin_headers)
     if include_match_status:
         full_headers.append(_MATCH_STATUS_HEADER)
-    full_headers.extend(_POC3_HEADERS)
+    full_headers.extend(_MC_HEADERS)
     for col_idx, h in enumerate(full_headers, start=1):
         c = ws.cell(row=1, column=col_idx, value=h)
         c.font = _HEADER_FONT
@@ -687,7 +687,7 @@ def _write_details_sheet(
         cells = list(rr.origin.cells)
         if include_match_status:
             cells.append(_bucket_for_row(rr))
-        cells.extend(rr.poc3_cells)
+        cells.extend(rr.mc_cells)
         for col_idx, value in enumerate(cells, start=1):
             _set_cell(ws, row_idx, col_idx, value)
     for col_idx in range(1, len(full_headers) + 1):
@@ -732,14 +732,14 @@ def _ai_score_for(rr: _ResolvedRow) -> tuple[int | None, float | None]:
     """Pull the AI tier + adjusted score out of the rendered ai- block."""
     if not rr.matched:
         return (None, None)
-    # _POC3_HEADERS[i] aligns 1:1 with rr.poc3_cells[i]; locate the two
+    # _MC_HEADERS[i] aligns 1:1 with rr.mc_cells[i]; locate the two
     # interesting cells by header name so this stays robust if the header
     # tuple is reordered.
-    nachos_idx = _POC3_HEADERS.index("ai-Base NACHOS Score")
+    nachos_idx = _MC_HEADERS.index("ai-Base NACHOS Score")
     # Single space post Sequence-1 hygiene — tracks `_DETAILS_HEADERS`.
-    adj_idx = _POC3_HEADERS.index("ai-Adjusted NACHOS Score")
-    nachos = rr.poc3_cells[nachos_idx]
-    adj = rr.poc3_cells[adj_idx]
+    adj_idx = _MC_HEADERS.index("ai-Adjusted NACHOS Score")
+    nachos = rr.mc_cells[nachos_idx]
+    adj = rr.mc_cells[adj_idx]
     if not isinstance(nachos, (int, float)):
         nachos = None
     return (
@@ -1126,7 +1126,7 @@ def _write_ai_summary_sheet(
         ("Total rows", str(len(resolved))),
         (
             "AI columns",
-            f"{len(_POC3_HEADERS)} appended (prefix '{_AI_PREFIX}'); "
+            f"{len(_MC_HEADERS)} appended (prefix '{_AI_PREFIX}'); "
             "human-authored cells preserved verbatim.",
         ),
     ]
@@ -1314,7 +1314,7 @@ def resolve_human_scores(
     overriding the config's baked path — resolution stays fail-loud
     against the passed file's actual headers); otherwise columns are
     located by header NAME (`_detect_config`). Key resolution reuses
-    the June keymap join (``reviewer_key_to_poc3_key``) so hand-written
+    the June keymap join (``reviewer_key_to_mc_key``) so hand-written
     entity/element spellings land; rows that resolve only via the gap
     artifact are deliberately skipped — they have no Details row to
     decorate.
@@ -1364,7 +1364,7 @@ def resolve_human_scores(
         ctx = contexts[state_code]
         if ctx is None or origin.entity is None or origin.element is None:
             continue
-        record_key = reviewer_key_to_poc3_key(
+        record_key = reviewer_key_to_mc_key(
             origin.entity, origin.element, ctx.lookup, spine=ctx.spine_index
         )
         if record_key is None or record_key in out:

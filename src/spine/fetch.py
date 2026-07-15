@@ -23,7 +23,7 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 #
 # TX points to the local TSDS SDK Docker ODS — there is no public TX sandbox.
 # The committed compose bundle (infra/tsds-sdk/) exposes the WebAPI on host
-# port 26030; `poc3 publish` passes this same base explicitly
+# port 26030; `mc publish` passes this same base explicitly
 # (publish/stages.DEFAULT_TX_BASE_URL). The URL is a default only; pass
 # `--base-url` to override when the local port differs. See
 # docs/archive/tx-ingestion-plan.md Phase 6.0-6.1. (Issue #213 item 2: this

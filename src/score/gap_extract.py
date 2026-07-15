@@ -13,7 +13,7 @@ state (each state contributes its own 10 %), reproducible across runs.
 Step 3 contract (``--sample-pct 1.0``): every gap row.
 
 CRITICAL: module-level ``run()`` is a plain function. The Click wrapper
-lives in ``src/poc3/cli.py``. See
+lives in ``src/cli.py``. See
 ``tests/test_score_aggregate_gap.py::TestCliWiring`` for the regression
 pattern.
 """
@@ -158,7 +158,7 @@ def select_sample(
     if not path.exists():
         raise FileNotFoundError(
             f"Gap artifact missing for {state}: {path}. "
-            f"Run `poc3 ingest gap --state {state}` first."
+            f"Run `mc ingest gap --state {state}` first."
         )
     payload = json.loads(path.read_text(encoding="utf-8"))
     gaps = list(payload.get("gaps", []))

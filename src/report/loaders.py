@@ -275,7 +275,7 @@ def row_number_index(state_inputs: list[StateInputs]) -> dict[str, int]:
     Computed once per workbook so the same record carries the same number
     on every sheet (including the spine-lens "Documented only" subset).
     Rendered at write time as a leading column — deliberately NOT part of
-    `_DETAILS_HEADERS`, so `human_score_backfill._POC3_HEADERS` (derived
+    `_DETAILS_HEADERS`, so `human_score_backfill._MC_HEADERS` (derived
     from that tuple) never grows a meaningless ``ai-Row #`` column.
 
     Raises when record keys collide across the row pool — a silent

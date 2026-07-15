@@ -1,4 +1,4 @@
-"""Run the POC-3 CLI via `python -m poc3`."""
+"""Run the Metadata-Catalog CLI via `python -m mc`."""
 
 from src.cli import main
 

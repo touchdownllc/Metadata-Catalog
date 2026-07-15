@@ -2,7 +2,7 @@
 
 Each :class:`Stage` names what it runs (an in-process call into the
 existing module ``run()``/``run_all()`` functions — the repo-wide
-convention; no subprocess anywhere in ``src/poc3``), what it produces,
+convention; no subprocess anywhere in ``src/``), what it produces,
 and what it consumes. Ordering constraints therefore stop being tribal
 knowledge:
 
@@ -26,7 +26,7 @@ knowledge:
 path must appear in an earlier stage's ``produces`` (or be a declared
 external input).
 
-The **lite profile** (``PublishOptions.lite`` / ``poc3 publish --lite``,
+The **lite profile** (``PublishOptions.lite`` / ``mc publish --lite``,
 docs/pipeline-lite.md) runs the score-only path: it disables the
 API-model-lens scoring pass (``extract-spine`` / ``aggregate-spine``)
 and the analysis/comparison reports (coverage, review-digest,
@@ -40,7 +40,7 @@ incident class). The structural constraint test runs against the lite
 stage subset too.
 
 Stage callables lazily import their targets (the ``cli.py`` pattern) so
-``poc3 publish --dry-run`` stays fast.
+``mc publish --dry-run`` stays fast.
 """
 
 from __future__ import annotations
@@ -169,7 +169,7 @@ class Stage:
 
 @functools.lru_cache(maxsize=None)
 def _source_fingerprint(*packages: str) -> str:
-    root = Path(__file__).resolve().parents[1]  # src/poc3
+    root = Path(__file__).resolve().parents[1]  # src/
     h = hashlib.sha256()
     for pkg in packages:
         base = root / pkg
@@ -224,7 +224,7 @@ def _extract_code_versions() -> dict[str, str]:
 def _report_code_versions() -> dict[str, str]:
     # Reports render score content (rubric prose lives in score/), so
     # both packages participate. This retires the documented
-    # `poc3 publish --from report-analyst` workaround for
+    # `mc publish --from report-analyst` workaround for
     # presentation-layer code changes — the fingerprint now sees them.
     return {
         **_plan_version(),
@@ -320,8 +320,8 @@ def _raw_source_inputs(ctx: StageContext) -> tuple[Path, ...]:
 
 def _curation_sidecars(ctx: StageContext) -> tuple[Path, ...]:
     """Analyst round-trip sidecars (``data/curation/{state}.json``) —
-    written by `poc3 review ingest`, re-applied by every report-analyst
-    run. Declaring them makes `review ingest` → `poc3 publish`
+    written by `mc review ingest`, re-applied by every report-analyst
+    run. Declaring them makes `review ingest` → `mc publish`
     actually regenerate the workbooks (issue #212 item 2)."""
     return tuple(
         ctx.curation_dir / f"{st.lower()}.json" for st in ctx.states
@@ -545,7 +545,7 @@ STAGES: tuple[Stage, ...] = (
                     "local TSDS Docker stack). Default OFF — pinned "
                     "artifacts refresh manually/quarterly (WS-3 pattern). "
                     "WI/IN school-year selection stays a manual concern "
-                    "(`poc3 spine fetch`).",
+                    "(`mc spine fetch`).",
         cost="free",
         run=_run_spine_fetch,
         # The raw caches ARE the fetch's output: declaring them lets the
@@ -774,8 +774,8 @@ STAGES: tuple[Stage, ...] = (
             *(() if ctx.options.lite
               else (ctx.out_dir / "review_queue_spine.json",)),
         ),
-        # The round-trip promise: `poc3 review ingest <workbook>` →
-        # `poc3 publish` regenerates the workbooks with the analyst
+        # The round-trip promise: `mc review ingest <workbook>` →
+        # `mc publish` regenerates the workbooks with the analyst
         # edits re-applied (issue #212 item 2).
         externals=_curation_sidecars,
         cross_state=True,

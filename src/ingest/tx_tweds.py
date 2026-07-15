@@ -305,7 +305,7 @@ def scrape_elements(
             f"TWEDS scrape incomplete after retry: {len(still_missing)} of "
             f"{len(expected_ids)} element pages failed to load "
             f"(first 10 IDs: {sample}). Cache NOT written — re-run "
-            f"`poc3 ingest tx` to resume, or delete "
+            f"`mc ingest tx` to resume, or delete "
             f"{cache_file} to start fresh."
         )
 
@@ -454,7 +454,7 @@ def scrape_entities(
             f"TWEDS entity scrape incomplete after retry: "
             f"{len(still_missing)} of {len(expected_ids)} entity pages "
             f"failed to load (first 10 IDs: {sample}). Partial cache "
-            f"kept for resume — re-run `poc3 ingest tx`, or delete "
+            f"kept for resume — re-run `mc ingest tx`, or delete "
             f"{cache_file} to start fresh."
         )
 

@@ -39,7 +39,7 @@ def read_json_artifact(path: Path, *, consumer: str) -> Any:
         raise ArtifactReadError(
             f"{path} is unreadable or corrupt ({type(exc).__name__}: "
             f"{exc}) — {consumer} refuses to treat a corrupt artifact "
-            f"as 'not produced'. Regenerate it (poc3 publish re-runs "
+            f"as 'not produced'. Regenerate it (mc publish re-runs "
             f"the producing stage; see the publish manifest for its "
             f"producer)."
         ) from exc

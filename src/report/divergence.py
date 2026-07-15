@@ -278,7 +278,7 @@ def run(
 
     Preconditions: each state has both `{state}_elements_source.json` and
     `{state}_elements_spine.json` present. Regenerate with
-    `poc3 ingest {state}` if missing.
+    `mc ingest {state}` if missing.
     """
     out_path = out or out_dir()
     out_path.mkdir(parents=True, exist_ok=True)

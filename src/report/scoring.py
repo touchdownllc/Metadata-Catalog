@@ -17,7 +17,7 @@ docs are 20% worse" — most of that spread is format-driven ceilings
 
 CRITICAL: module-level ``run()`` is a plain function (POC-2 pitfall)
 — do NOT decorate with ``@click.command()``. The Click wrapper lives
-in ``src/poc3/cli.py``.
+in ``src/cli.py``.
 """
 
 from __future__ import annotations
@@ -569,7 +569,7 @@ def run(
     """Write ``scoring_report_{lens}.{json,md}``. Returns the report dict.
 
     Preconditions: each state has ``data/out/{state}_scores_{lens}.json``.
-    Regenerate missing sidecars with ``poc3 score aggregate --state X
+    Regenerate missing sidecars with ``mc score aggregate --state X
     --lens {lens}``.
     """
     base = out or out_dir()

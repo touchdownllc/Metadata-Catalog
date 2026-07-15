@@ -775,7 +775,7 @@ def scrape_all_entity_pages(
             f"{len(expected_ids)} entity pages have body content "
             f"(floor {_MIN_ENTITY_BODY_RATIO:.0%}). Failure entries are "
             f"tagged in {cache_file} and re-attempted on the next run — "
-            f"re-run `poc3 ingest wi` once Confluence recovers, or "
+            f"re-run `mc ingest wi` once Confluence recovers, or "
             f"delete the cache to start fresh."
         )
 
@@ -1276,9 +1276,9 @@ from src.utils.paths import (
     state_spine_path,
 )
 
-_POC3_ROOT = Path(__file__).resolve().parents[2]
+_MC_ROOT = Path(__file__).resolve().parents[2]
 _WI_SPINE_PATH = state_spine_path("WI")
-_WI_CACHE_DIR = _POC3_ROOT / "data" / "raw" / "wi" / "confluence"
+_WI_CACHE_DIR = _MC_ROOT / "data" / "raw" / "wi" / "confluence"
 _WI_ELEMENTS_OUT = state_elements_path("WI", "source")
 _WI_ELEMENTS_SPINE_OUT = state_elements_path("WI", "spine")
 _WI_GAP_OUT = state_gap_log_path("WI")
@@ -1343,7 +1343,7 @@ def run() -> None:
     if not _WI_SPINE_PATH.exists():
         raise FileNotFoundError(
             f"No WI spine at {_WI_SPINE_PATH}. "
-            f"Run `poc3 spine fetch --state WI` + `poc3 spine build --state WI` first."
+            f"Run `mc spine fetch --state WI` + `mc spine build --state WI` first."
         )
     spine = StateSpine.model_validate_json(_WI_SPINE_PATH.read_text(encoding="utf-8"))
     logger.info(
@@ -1396,7 +1396,7 @@ def run() -> None:
         spine_out=_WI_ELEMENTS_SPINE_OUT,
         gap_out=_WI_GAP_OUT,
         spine_path=_WI_SPINE_PATH,
-        spine_source_rel=str(_WI_SPINE_PATH.relative_to(_POC3_ROOT)),
+        spine_source_rel=str(_WI_SPINE_PATH.relative_to(_MC_ROOT)),
         source_coverage_note=(
             "Of our WI doc elements, how many match a spine element "
             "(case-insensitive, FK+descriptor aliases)."

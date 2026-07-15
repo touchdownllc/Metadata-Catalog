@@ -39,7 +39,7 @@ Output schema (one record per gap pair):
 }
 ```
 
-CLI: ``poc3 ingest gap --state STATE`` (or ``--state all``). Outputs land
+CLI: ``mc ingest gap --state STATE`` (or ``--state all``). Outputs land
 at ``data/out/{state}_elements_gap.json``.
 """
 

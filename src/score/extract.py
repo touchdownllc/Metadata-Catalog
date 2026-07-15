@@ -17,7 +17,7 @@ artifact per state under
 ``data/out/scoring/phase_a/{STATE}_{fact}.jsonl``.
 
 CRITICAL: module-level ``run()`` is a plain function. Do NOT decorate it
-with ``@click.command()`` — the Click wrapper lives in ``src/poc3/cli.py``.
+with ``@click.command()`` — the Click wrapper lives in ``src/cli.py``.
 See ``tests/test_ingest_az.py::TestCliWiring`` for the regression pattern.
 """
 

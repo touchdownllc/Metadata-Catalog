@@ -1,6 +1,6 @@
 """Analyst-edit round-trip — the curation sidecar (issue #186 Option C).
 
-``poc3 review ingest <workbook.xlsx>`` reads the analyst-input band from
+``mc review ingest <workbook.xlsx>`` reads the analyst-input band from
 a generated analyst workbook back into a per-state curation sidecar at
 ``data/curation/{state}.json``. Every ``report analyst`` regeneration
 re-applies the stored values into the band, so regenerating a workbook
@@ -961,8 +961,8 @@ class FactCorrectionReport:
             lines.append(f"  wrote: {self.written_path}")
         lines.append(
             "  note: the correction applies at aggregate time — run "
-            f"`poc3 score aggregate --state {self.state.lower()} --lens "
-            f"{self.lens}` (or `poc3 publish`) to recompute scores; the "
+            f"`mc score aggregate --state {self.state.lower()} --lens "
+            f"{self.lens}` (or `mc publish`) to recompute scores; the "
             "prompt cache is never touched"
         )
         return "\n".join(lines)

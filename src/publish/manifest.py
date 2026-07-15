@@ -284,7 +284,7 @@ def verify_fresh(
                 f"{_rel(artifact)} was produced at scoring_plan_version "
                 f"{recorded_plan} but the code is now at "
                 f"{SCORING_PLAN_VERSION} — {consumer} would join across "
-                f"artifacts from a superseded methodology. Re-run: poc3 "
+                f"artifacts from a superseded methodology. Re-run: mc "
                 f"publish (stage '{entry.get('producer')}' and its "
                 f"downstream cone). Pass --allow-stale to proceed on the "
                 f"pre-bump numbers."
@@ -303,7 +303,7 @@ def verify_fresh(
         message = (
             f"{_rel(artifact)} is tracked by the publish manifest (stage "
             f"'{entry.get('producer')}') but MISSING on disk — {consumer} "
-            f"would silently degrade. Re-run: poc3 publish --from "
+            f"would silently degrade. Re-run: mc publish --from "
             f"{entry.get('producer')}. Pass --allow-stale to accept the "
             f"degraded fallback."
         )
@@ -331,7 +331,7 @@ def verify_fresh(
         message = (
             f"{_rel(artifact)} is stale for {consumer}: input(s) changed "
             f"since stage '{entry.get('producer')}' produced it — {lines}. "
-            f"Re-run: poc3 publish --from {entry.get('producer')} "
+            f"Re-run: mc publish --from {entry.get('producer')} "
             f"(or the stage's own command). Pass --allow-stale to proceed "
             f"on the stale artifact (degraded numbers — see PR #182)."
         )
@@ -345,7 +345,7 @@ def verify_fresh(
         logger.warning(
             "%s differs from its manifest record (producer '%s' re-run "
             "manually?) — the artifact is NEWER than the ledger; consider "
-            "a fresh `poc3 publish` to restore lineage",
+            "a fresh `mc publish` to restore lineage",
             _rel(artifact), entry.get("producer"),
         )
         return "manifest_out_of_date"

@@ -18,7 +18,7 @@ Structurally different from ``src.score.extract``:
   recommendations.md §2/§4 inputs), not a per-record scoring dimension.
 
 CRITICAL: module-level ``run()`` is a plain function. The Click wrapper
-lives in ``src/poc3/cli.py``. See
+lives in ``src/cli.py``. See
 ``tests/test_ingest_az.py::TestCliWiring`` for the regression pattern.
 """
 

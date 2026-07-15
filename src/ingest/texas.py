@@ -44,9 +44,9 @@ from src.utils.paths import (
     state_spine_path,
 )
 
-_POC3_ROOT = Path(__file__).resolve().parents[2]
+_MC_ROOT = Path(__file__).resolve().parents[2]
 _TX_SPINE_PATH = state_spine_path("TX")
-_TX_TWEDS_CACHE_DIR = _POC3_ROOT / "data" / "raw" / "tx" / "tweds"
+_TX_TWEDS_CACHE_DIR = _MC_ROOT / "data" / "raw" / "tx" / "tweds"
 _TX_ELEMENTS_OUT = state_elements_path("TX", "source")
 _TX_ELEMENTS_SPINE_OUT = state_elements_path("TX", "spine")
 _TX_GAP_OUT = state_gap_log_path("TX")
@@ -291,9 +291,9 @@ def run() -> None:
     Writes ``data/out/tx_elements_source.json`` and ``data/out/tx_gap_log.json``.
     Requires both:
 
-    - ``data/spine/tx_spine.json`` (``poc3 spine fetch --state TX
+    - ``data/spine/tx_spine.json`` (``mc spine fetch --state TX
       --base-url http://localhost:PORT/metadata/data/v3`` +
-      ``poc3 spine build --state TX``).
+      ``mc spine build --state TX``).
     - ``data/raw/tx/tweds/{entities,elements}_scraped.json`` — pre-scraped
       TWEDS cache. If missing, ``tx_tweds.load_or_fetch_tweds`` attempts
       a fresh scrape (Playwright required). No silent spine-only fallback
@@ -307,8 +307,8 @@ def run() -> None:
     if not _TX_SPINE_PATH.exists():
         raise FileNotFoundError(
             f"No TX spine at {_TX_SPINE_PATH}. "
-            f"Run `poc3 spine fetch --state TX --base-url <local_docker_url>` "
-            f"+ `poc3 spine build --state TX` first."
+            f"Run `mc spine fetch --state TX --base-url <local_docker_url>` "
+            f"+ `mc spine build --state TX` first."
         )
     spine = StateSpine.model_validate_json(
         _TX_SPINE_PATH.read_text(encoding="utf-8")
@@ -359,7 +359,7 @@ def run() -> None:
         spine_out=_TX_ELEMENTS_SPINE_OUT,
         gap_out=_TX_GAP_OUT,
         spine_path=_TX_SPINE_PATH,
-        spine_source_rel=str(_TX_SPINE_PATH.relative_to(_POC3_ROOT)),
+        spine_source_rel=str(_TX_SPINE_PATH.relative_to(_MC_ROOT)),
         source_coverage_note=(
             "Of our TWEDS v33 TEDS rows (entity/element pairs), how many "
             "match a spine element (case-insensitive, FK+descriptor aliases)."

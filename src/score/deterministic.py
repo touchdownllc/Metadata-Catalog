@@ -1544,8 +1544,8 @@ def run(
         if not spine_path.exists():
             raise FileNotFoundError(
                 f"{fact!r} needs the spine for {state.upper()}, but "
-                f"{spine_path} is missing — run `poc3 spine fetch --state "
-                f"{state.upper()}` + `poc3 spine build --state {state.upper()}` first."
+                f"{spine_path} is missing — run `mc spine fetch --state "
+                f"{state.upper()}` + `mc spine build --state {state.upper()}` first."
             )
         spine = StateSpine.model_validate_json(
             spine_path.read_text(encoding="utf-8")

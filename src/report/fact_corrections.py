@@ -45,7 +45,7 @@ def resolve_corrections(
     - ``applied`` — the sidecar's fact carries ``human_corrected`` and
       the corrected value (the overlay ran);
     - ``pending re-aggregate`` — the sidecar predates the correction
-      (run ``poc3 score aggregate`` / ``poc3 publish``);
+      (run ``mc score aggregate`` / ``mc publish``);
     - ``record gone`` — the record is no longer scored at all.
 
     Sorted by ``(record_key, fact)`` for deterministic rendering.

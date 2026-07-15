@@ -3,8 +3,8 @@
 Handles both Swagger 2.0 (DM 4.0, schemas in `definitions`) and
 OpenAPI 3.0+ (DM 6.0, schemas in `components/schemas`).
 
-Entry points: ``build_state_spine`` (via ``poc3 spine build``) and
-``regenerate_domain_map`` (via ``poc3 spine domain-map``).
+Entry points: ``build_state_spine`` (via ``mc spine build``) and
+``regenerate_domain_map`` (via ``mc spine domain-map``).
 """
 
 from __future__ import annotations
@@ -468,7 +468,7 @@ def regenerate_domain_map(source_state: str = "AZ") -> Path:
     if not resources_path.exists():
         raise FileNotFoundError(
             f"No cached swagger at {resources_path}. "
-            f"Run `poc3 spine fetch --state {source_state}` first."
+            f"Run `mc spine fetch --state {source_state}` first."
         )
     mapping = build_domain_map(resources_path)
     if not mapping:
@@ -633,7 +633,7 @@ from src.models.spine import SpineSourceURLs, StateSpine
 def build_state_spine(state: str) -> StateSpine:
     """Load cached Swagger from data/raw/{state}/swagger/ and build a StateSpine.
 
-    Writes data/spine/{state_lower}_spine.json. Assumes `poc3 spine fetch`
+    Writes data/spine/{state_lower}_spine.json. Assumes `mc spine fetch`
     has already been run for this state.
     """
     state = state.upper()
@@ -643,7 +643,7 @@ def build_state_spine(state: str) -> StateSpine:
     if not resources_path.exists():
         raise FileNotFoundError(
             f"No cached swagger for {state} at {resources_path}. "
-            f"Run `poc3 spine fetch --state {state}` first."
+            f"Run `mc spine fetch --state {state}` first."
         )
 
     meta_path = raw_dir / "meta.json"

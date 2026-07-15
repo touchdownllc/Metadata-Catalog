@@ -515,24 +515,24 @@ from src.utils.paths import (
     state_spine_path,
 )
 
-_POC3_ROOT = Path(__file__).resolve().parents[2]
+_MC_ROOT = Path(__file__).resolve().parents[2]
 _AZ_SPINE_PATH = state_spine_path("AZ")
-_AZ_XLSX_PATH = _POC3_ROOT / "data" / "raw" / "az" / "Use_Case_12.0_20260227.xlsm"
+_AZ_XLSX_PATH = _MC_ROOT / "data" / "raw" / "az" / "Use_Case_12.0_20260227.xlsm"
 # Fresh-clone bootstrap: the workbook lives under `data/bootstrap/az/` so
-# `poc3 ingest az` works out of the box. A copy in `data/raw/az/` still
+# `mc ingest az` works out of the box. A copy in `data/raw/az/` still
 # wins when present — devs re-downloading from ADE don't have to touch
 # `data/bootstrap/`.
 _AZ_XLSX_BOOTSTRAP_PATH = (
-    _POC3_ROOT / "data" / "bootstrap" / "az" / "Use_Case_12.0_20260227.xlsm"
+    _MC_ROOT / "data" / "bootstrap" / "az" / "Use_Case_12.0_20260227.xlsm"
 )
-_AZ_RULES_PATH = _POC3_ROOT / "data" / "raw" / "az" / "az_integrity_rules.json"
+_AZ_RULES_PATH = _MC_ROOT / "data" / "raw" / "az" / "az_integrity_rules.json"
 # Fresh-clone bootstrap: the parsed integrity-rules JSON lives under
-# `data/bootstrap/az/` so `poc3 ingest az` enriches business_rules_text
+# `data/bootstrap/az/` so `mc ingest az` enriches business_rules_text
 # out of the box. A copy in `data/raw/az/` still wins when present —
 # devs who re-run `python -m src.ingest.az_integrity_rules` against an
 # updated PDF set don't have to touch `data/bootstrap/`.
 _AZ_RULES_BOOTSTRAP_PATH = (
-    _POC3_ROOT / "data" / "bootstrap" / "az" / "az_integrity_rules.json"
+    _MC_ROOT / "data" / "bootstrap" / "az" / "az_integrity_rules.json"
 )
 _AZ_ELEMENTS_OUT = state_elements_path("AZ", "source")
 _AZ_ELEMENTS_SPINE_OUT = state_elements_path("AZ", "spine")
@@ -561,7 +561,7 @@ def run() -> None:
     if not _AZ_SPINE_PATH.exists():
         raise FileNotFoundError(
             f"No AZ spine at {_AZ_SPINE_PATH}. "
-            f"Run `poc3 spine fetch --state AZ` + `poc3 spine build --state AZ` first."
+            f"Run `mc spine fetch --state AZ` + `mc spine build --state AZ` first."
         )
     spine = StateSpine.model_validate_json(_AZ_SPINE_PATH.read_text(encoding="utf-8"))
     logger.info(
@@ -689,7 +689,7 @@ def run() -> None:
         spine_out=_AZ_ELEMENTS_SPINE_OUT,
         gap_out=_AZ_GAP_OUT,
         spine_path=_AZ_SPINE_PATH,
-        spine_source_rel=str(_AZ_SPINE_PATH.relative_to(_POC3_ROOT)),
+        spine_source_rel=str(_AZ_SPINE_PATH.relative_to(_MC_ROOT)),
         source_coverage_note=(
             "Of our AZ doc elements, how many match a spine element "
             "(case-insensitive, FK+descriptor aliases)."

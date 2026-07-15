@@ -134,7 +134,7 @@ def read_manifest(batch_id: str, *, root: Path | None = None) -> BatchManifest:
     if not target.exists():
         raise FileNotFoundError(
             f"no batch manifest at {target} — confirm batch_id and re-check "
-            f"`poc3 score batches list`"
+            f"`mc score batches list`"
         )
     data = json.loads(target.read_text(encoding="utf-8"))
     return BatchManifest.from_dict(data)
