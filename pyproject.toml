@@ -1,0 +1,131 @@
+[project]
+name = "metadata-catalog"
+version = "0.1.0"
+description = "Data Standard Metadata Collection and Usage tools for Ed-Fi metadata analysis"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=0.96.0",
+    "beautifulsoup4>=4.14.0",
+    "click>=8.3.0",
+    "httpx>=0.28.0",
+    "jsonschema>=4.24.0",
+    "lxml>=6.0.0",
+    "openpyxl>=3.1.0",
+    "pdfplumber>=0.11.0",
+    "pydantic>=2.12.0",
+    "python-docx>=1.2.0",
+    "python-dotenv>=1.0.0",
+    "pyyaml>=6.0.0",
+]
+
+[project.optional-dependencies]
+# playwright is only needed for the TX TWEDS Chromium scraper
+# (ingest/tx_tweds.py, one lazy import site). Everything else — including
+# the full test suite — runs without it. Install with:
+#   uv pip install -e '.[scrape]'
+scrape = [
+    "playwright>=1.48.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.0",
+    "ruff>=0.9.0",
+    "mypy>=1.14.0",
+]
+
+[project.scripts]
+metadata-catalog = "src.cli:main"
+mc = "src.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+# Small, high-signal baseline (issue #213 item 4). Deliberately configured to
+# be GREEN on the current tree — lint adoption must not force churn in the
+# scoring/report/ingest modules (sidecar byte-identity guardrail). What was
+# relaxed, and why:
+#   E501 — long lines are pervasive in this prose-heavy tree; enforcing it is
+#          pure formatting churn.
+#   E402 — late module-level imports are deliberate in adapters, spine/build,
+#          and tests (docstring/config setup before import); revisit as #213
+#          items 1–3 refactor those modules.
+#   E741 — `l` loop variables in diagnostic scripts/tests; rename churn only.
+#   F541 — placeholder-less f-strings in CLI/script print scaffolding; cosmetic.
+#   F841 — unused locals sit in modules item 4 must not touch (report/score/
+#          ingest); clean up opportunistically as #213 items 1–3 land.
+# isort (I) deliberately NOT enabled: it would reorder imports across most of
+# the tree for zero behavior benefit.
+select = ["E", "F", "W"]
+ignore = ["E501", "E402", "E741", "F541", "F841"]
+
+[tool.mypy]
+# Pragmatic green-today baseline (issue #213 item 4): the tree is ~98%
+# annotated, but adoption is deliberately loose so no source refactors were
+# needed. What was relaxed, and why:
+#   ignore_missing_imports — openpyxl/pdfplumber/docx et al. ship no stubs.
+#   Scoped to src — tests/scripts monkeypatch heavily; type them later.
+# Tighten incrementally (e.g. per-module strict = true) as #213 items 1–3
+# touch each module.
+python_version = "3.12"
+files = ["src"]
+ignore_missing_imports = true
+
+# Baseline module exclusions — these 24 modules carry pre-existing type
+# errors (dominated by arg-type on the dict-row workbook-rendering seam in
+# workbook_spec/analyst, plus the openpyxl/anthropic library boundaries).
+# `ignore_errors` silences THEIR errors while they still contribute inferred
+# signatures to consumers; the other 53 src modules are fully checked.
+# RATCHET RULE: when #213 items 1–3 refactor one of these modules, fix its
+# errors and DELETE its entry here. Do not add new modules to this list.
+[[tool.mypy.overrides]]
+module = [
+    "src.ingest.az_integrity_rules",
+    "src.ingest.gap_surfacer",
+    "src.ingest.idoe_confluence",
+    "src.ingest.shared",
+    "src.ingest.swagger_backfill",
+    "src.ingest.tx_tweds",
+    "src.ingest.wisconsin",
+    "src.publish.orchestrator",
+    "src.publish.stages",
+    "src.report.analyst",
+    # Split out of analyst.py by issue #213 item 1 — carries two of its
+    # relocated pre-existing dict-row-seam errors (same ratchet rule).
+    "src.report.score_card",
+    "src.report.coverage",
+    "src.report.human_score_backfill",
+    "src.report.workbook_render",
+    "src.report.workbook_spec",
+    "src.score.aggregate",
+    "src.score.aggregate_gap",
+    "src.score.batch_client",
+    "src.score.client",
+    "src.score.deterministic",
+    "src.score.extract",
+    "src.score.inline",
+    "src.score.review_comparison",
+    "src.score.rules",
+    "src.score.runner",
+]
+ignore_errors = true
+
+[tool.pytest.ini_options]
+# `pythonpath` makes bare `pytest` work from the repo root regardless of
+# editable-install state (kills the PYTHONPATH=src incantation and the
+# macOS hidden-.pth / shadow-install traps for testing).
+pythonpath = ["src"]
+addopts = "-p no:anyio"
+testpaths = ["tests"]
+markers = [
+    "realdata: needs locally generated data/ artifacts (deselected in CI via -m 'not realdata')",
+]

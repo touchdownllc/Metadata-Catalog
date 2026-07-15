@@ -1,0 +1,719 @@
+{
+  "AcademicWeek": [
+    "SchoolCalendar"
+  ],
+  "AccountabilityRating": [
+    "EducationOrganization",
+    "Enrollment"
+  ],
+  "ApplicantProfile": [
+    "RecruitingAndStaffing"
+  ],
+  "Application": [
+    "RecruitingAndStaffing"
+  ],
+  "ApplicationEvent": [
+    "RecruitingAndStaffing"
+  ],
+  "Assessment": [
+    "Assessment",
+    "AssessmentMetadata"
+  ],
+  "AssessmentAdministration": [
+    "AssessmentRegistration"
+  ],
+  "AssessmentAdministrationParticipation": [
+    "AssessmentRegistration"
+  ],
+  "AssessmentBatteryPart": [
+    "AssessmentRegistration"
+  ],
+  "AssessmentItem": [
+    "Assessment",
+    "AssessmentMetadata"
+  ],
+  "AssessmentScoreRangeLearningStandard": [
+    "Assessment"
+  ],
+  "BalanceSheetDimension": [
+    "Finance"
+  ],
+  "BellSchedule": [
+    "BellSchedule"
+  ],
+  "Calendar": [
+    "SchoolCalendar"
+  ],
+  "CalendarDate": [
+    "SchoolCalendar"
+  ],
+  "Candidate": [
+    "EducatorPreparationProgram"
+  ],
+  "CandidateEducatorPreparationProgramAssociation": [
+    "EducatorPreparationProgram"
+  ],
+  "CandidateIdentificationCode": [
+    "EducatorPreparationProgram"
+  ],
+  "CandidateRelationshipToStaffAssociation": [
+    "EducatorPreparationProgram"
+  ],
+  "Certification": [
+    "Credential"
+  ],
+  "CertificationExam": [
+    "Credential"
+  ],
+  "CertificationExamResult": [
+    "Credential"
+  ],
+  "ChartOfAccount": [
+    "Finance"
+  ],
+  "ClassPeriod": [
+    "BellSchedule",
+    "TeachingAndLearning",
+    "SectionsAndPrograms"
+  ],
+  "Cohort": [
+    "Intervention",
+    "StudentCohort"
+  ],
+  "CommunityOrganization": [
+    "EducationOrganization"
+  ],
+  "CommunityProvider": [
+    "EducationOrganization"
+  ],
+  "CommunityProviderLicense": [
+    "EducationOrganization"
+  ],
+  "CompetencyObjective": [
+    "StudentAcademicRecord",
+    "ReportCard"
+  ],
+  "Contact": [
+    "StudentIdentificationAndDemographics",
+    "Survey"
+  ],
+  "ContactIdentificationCode": [
+    "StudentIdentificationAndDemographics"
+  ],
+  "Course": [
+    "StudentAcademicRecord",
+    "Survey",
+    "TeachingAndLearning",
+    "CourseCatalog",
+    "Gradebook",
+    "SectionsAndPrograms",
+    "StudentTranscript"
+  ],
+  "CourseOffering": [
+    "StudentAcademicRecord",
+    "TeachingAndLearning",
+    "CourseCatalog",
+    "SectionsAndPrograms"
+  ],
+  "CourseTranscript": [
+    "StudentAcademicRecord",
+    "TeachingAndLearning",
+    "SectionsAndPrograms",
+    "StudentTranscript"
+  ],
+  "Credential": [
+    "Credential",
+    "Staff"
+  ],
+  "CredentialEvent": [
+    "Credential"
+  ],
+  "CrisisEvent": [
+    "Enrollment"
+  ],
+  "DescriptorMapping": [
+    "EducationOrganization"
+  ],
+  "DisciplineAction": [
+    "Discipline"
+  ],
+  "DisciplineIncident": [
+    "Discipline"
+  ],
+  "EducationContent": [
+    "Intervention"
+  ],
+  "EducationOrganizationIdentificationCode": [
+    "EducationOrganization"
+  ],
+  "EducationOrganizationInterventionPrescriptionAssociation": [
+    "Intervention"
+  ],
+  "EducationOrganizationNetwork": [
+    "EducationOrganization"
+  ],
+  "EducationOrganizationNetworkAssociation": [
+    "EducationOrganization"
+  ],
+  "EducationOrganizationPeerAssociation": [
+    "EducationOrganization"
+  ],
+  "EducationServiceCenter": [
+    "EducationOrganization",
+    "Staff"
+  ],
+  "EducatorPreparationProgram": [
+    "EducatorPreparationProgram"
+  ],
+  "Evaluation": [
+    "PerformanceEvaluation"
+  ],
+  "EvaluationElement": [
+    "PerformanceEvaluation"
+  ],
+  "EvaluationElementRating": [
+    "PerformanceEvaluation"
+  ],
+  "EvaluationObjective": [
+    "PerformanceEvaluation"
+  ],
+  "EvaluationObjectiveRating": [
+    "PerformanceEvaluation"
+  ],
+  "EvaluationRating": [
+    "PerformanceEvaluation"
+  ],
+  "EvaluationRubricDimension": [
+    "TeachingAndLearning",
+    "StudentProgramEvaluation"
+  ],
+  "FeederSchoolAssociation": [
+    "EducationOrganization"
+  ],
+  "FieldworkExperience": [
+    "EducatorPreparationProgram"
+  ],
+  "FieldworkExperienceSectionAssociation": [
+    "EducatorPreparationProgram"
+  ],
+  "FinancialAid": [
+    "Enrollment"
+  ],
+  "FunctionDimension": [
+    "Finance"
+  ],
+  "FundDimension": [
+    "Finance"
+  ],
+  "Goal": [
+    "PerformanceEvaluation"
+  ],
+  "Grade": [
+    "StudentAcademicRecord",
+    "ReportCard"
+  ],
+  "GradebookEntry": [
+    "StudentAcademicRecord",
+    "Gradebook"
+  ],
+  "GradingPeriod": [
+    "SchoolCalendar",
+    "StudentAcademicRecord",
+    "ReportCard"
+  ],
+  "GraduationPlan": [
+    "Enrollment",
+    "Graduation"
+  ],
+  "Intervention": [
+    "Intervention",
+    "StudentCohort"
+  ],
+  "InterventionPrescription": [
+    "Intervention"
+  ],
+  "InterventionStudy": [
+    "Intervention"
+  ],
+  "LearningStandard": [
+    "Assessment",
+    "StudentAcademicRecord",
+    "TeachingAndLearning",
+    "CourseCatalog",
+    "Gradebook",
+    "ReportCard",
+    "Standards"
+  ],
+  "LearningStandardEquivalenceAssociation": [
+    "Assessment"
+  ],
+  "LocalAccount": [
+    "Finance"
+  ],
+  "LocalActual": [
+    "Finance"
+  ],
+  "LocalBudget": [
+    "Finance"
+  ],
+  "LocalContractedStaff": [
+    "Finance"
+  ],
+  "LocalEducationAgency": [
+    "EducationOrganization",
+    "Enrollment",
+    "Staff"
+  ],
+  "LocalEncumbrance": [
+    "Finance"
+  ],
+  "LocalPayroll": [
+    "Finance"
+  ],
+  "Location": [
+    "TeachingAndLearning",
+    "SectionsAndPrograms"
+  ],
+  "ObjectDimension": [
+    "Finance"
+  ],
+  "ObjectiveAssessment": [
+    "Assessment",
+    "AssessmentMetadata"
+  ],
+  "OpenStaffPosition": [
+    "Staff"
+  ],
+  "OpenStaffPositionEvent": [
+    "Staff"
+  ],
+  "OperationalUnitDimension": [
+    "Finance"
+  ],
+  "OrganizationDepartment": [
+    "EducationOrganization"
+  ],
+  "Path": [
+    "Path"
+  ],
+  "PathMilestone": [
+    "Path"
+  ],
+  "PathPhase": [
+    "Path"
+  ],
+  "PerformanceEvaluation": [
+    "PerformanceEvaluation"
+  ],
+  "PerformanceEvaluationRating": [
+    "PerformanceEvaluation"
+  ],
+  "Person": [
+    "Staff",
+    "StudentIdentificationAndDemographics"
+  ],
+  "PostSecondaryEvent": [
+    "Graduation"
+  ],
+  "PostSecondaryInstitution": [
+    "EducationOrganization",
+    "Graduation"
+  ],
+  "ProfessionalDevelopmentEvent": [
+    "RecruitingAndStaffing"
+  ],
+  "ProfessionalDevelopmentEventAttendance": [
+    "RecruitingAndStaffing"
+  ],
+  "Program": [
+    "AlternativeAndSupplementalServices",
+    "Assessment",
+    "SpecialEducation",
+    "StudentAcademicRecord",
+    "StudentAttendance",
+    "StudentCohort",
+    "Survey",
+    "TeachingAndLearning",
+    "AssessmentMetadata",
+    "ReportCard",
+    "SectionsAndPrograms",
+    "StudentProgramEvaluation"
+  ],
+  "ProgramDimension": [
+    "Finance"
+  ],
+  "ProgramEvaluation": [
+    "TeachingAndLearning",
+    "StudentProgramEvaluation"
+  ],
+  "ProgramEvaluationElement": [
+    "TeachingAndLearning",
+    "StudentProgramEvaluation"
+  ],
+  "ProgramEvaluationObjective": [
+    "TeachingAndLearning",
+    "StudentProgramEvaluation"
+  ],
+  "ProjectDimension": [
+    "Finance"
+  ],
+  "QuantitativeMeasure": [
+    "PerformanceEvaluation"
+  ],
+  "QuantitativeMeasureScore": [
+    "PerformanceEvaluation"
+  ],
+  "RecruitmentEvent": [
+    "RecruitingAndStaffing"
+  ],
+  "RecruitmentEventAttendance": [
+    "RecruitingAndStaffing"
+  ],
+  "ReportCard": [
+    "StudentAcademicRecord",
+    "ReportCard"
+  ],
+  "RestraintEvent": [
+    "SpecialEducation"
+  ],
+  "RubricDimension": [
+    "PerformanceEvaluation"
+  ],
+  "School": [
+    "AlternativeAndSupplementalServices",
+    "BellSchedule",
+    "Discipline",
+    "EducationOrganization",
+    "Enrollment",
+    "Graduation",
+    "SchoolCalendar",
+    "SpecialEducation",
+    "Staff",
+    "StudentAcademicRecord",
+    "StudentAttendance",
+    "TeachingAndLearning",
+    "CourseCatalog",
+    "SectionsAndPrograms"
+  ],
+  "Section": [
+    "AlternativeAndSupplementalServices",
+    "Assessment",
+    "BellSchedule",
+    "SpecialEducation",
+    "StudentAcademicRecord",
+    "StudentAttendance",
+    "StudentCohort",
+    "Survey",
+    "TeachingAndLearning",
+    "AssessmentMetadata",
+    "Gradebook",
+    "ReportCard",
+    "SectionsAndPrograms"
+  ],
+  "SectionAttendanceTakenEvent": [
+    "StudentAttendance"
+  ],
+  "Session": [
+    "BellSchedule",
+    "SchoolCalendar",
+    "StudentAcademicRecord",
+    "StudentAttendance",
+    "Survey",
+    "TeachingAndLearning",
+    "CourseCatalog",
+    "SectionsAndPrograms"
+  ],
+  "SourceDimension": [
+    "Finance"
+  ],
+  "Staff": [
+    "AlternativeAndSupplementalServices",
+    "Discipline",
+    "Finance",
+    "Intervention",
+    "SpecialEducation",
+    "Staff",
+    "StudentAttendance",
+    "StudentCohort",
+    "Survey",
+    "TeachingAndLearning",
+    "SectionsAndPrograms"
+  ],
+  "StaffAbsenceEvent": [
+    "Staff"
+  ],
+  "StaffCohortAssociation": [
+    "StudentCohort"
+  ],
+  "StaffDemographic": [
+    "Staff"
+  ],
+  "StaffDirectory": [
+    "Staff"
+  ],
+  "StaffDisciplineIncidentAssociation": [
+    "Discipline"
+  ],
+  "StaffEducationOrganizationAssignmentAssociation": [
+    "Staff"
+  ],
+  "StaffEducationOrganizationEmploymentAssociation": [
+    "Staff"
+  ],
+  "StaffEducatorPreparationProgramAssociation": [
+    "EducatorPreparationProgram"
+  ],
+  "StaffIdentificationCode": [
+    "Staff"
+  ],
+  "StaffLeave": [
+    "Staff"
+  ],
+  "StaffProgramAssociation": [
+    "AlternativeAndSupplementalServices",
+    "SpecialEducation",
+    "TeachingAndLearning",
+    "SectionsAndPrograms"
+  ],
+  "StaffSchoolAssociation": [
+    "Staff",
+    "TeachingAndLearning",
+    "SectionsAndPrograms"
+  ],
+  "StaffSectionAssociation": [
+    "SpecialEducation",
+    "StudentCohort",
+    "TeachingAndLearning",
+    "SectionsAndPrograms"
+  ],
+  "StateEducationAgency": [
+    "EducationOrganization",
+    "Staff"
+  ],
+  "Student": [
+    "AlternativeAndSupplementalServices",
+    "Assessment",
+    "Discipline",
+    "Enrollment",
+    "Graduation",
+    "Intervention",
+    "SchoolCalendar",
+    "SpecialEducation",
+    "StudentAcademicRecord",
+    "StudentAttendance",
+    "StudentCohort",
+    "StudentHealth",
+    "StudentIdentificationAndDemographics",
+    "Survey",
+    "TeachingAndLearning",
+    "Gradebook",
+    "ReportCard",
+    "SectionsAndPrograms",
+    "StudentAssessment",
+    "StudentTranscript"
+  ],
+  "StudentAcademicRecord": [
+    "Graduation",
+    "StudentAcademicRecord",
+    "TeachingAndLearning",
+    "SectionsAndPrograms",
+    "StudentTranscript"
+  ],
+  "StudentAssessment": [
+    "Assessment",
+    "StudentAssessment"
+  ],
+  "StudentAssessmentRegistration": [
+    "AssessmentRegistration"
+  ],
+  "StudentAssessmentRegistrationBatteryPartAssociation": [
+    "AssessmentRegistration"
+  ],
+  "StudentCTEProgramAssociation": [
+    "AlternativeAndSupplementalServices"
+  ],
+  "StudentCohortAssociation": [
+    "Intervention",
+    "StudentCohort"
+  ],
+  "StudentCompetencyObjective": [
+    "StudentAcademicRecord",
+    "ReportCard"
+  ],
+  "StudentContactAssociation": [
+    "StudentIdentificationAndDemographics"
+  ],
+  "StudentDemographic": [
+    "StudentIdentificationAndDemographics"
+  ],
+  "StudentDirectory": [
+    "StudentIdentificationAndDemographics"
+  ],
+  "StudentDisciplineIncidentBehaviorAssociation": [
+    "Discipline"
+  ],
+  "StudentDisciplineIncidentNonOffenderAssociation": [
+    "Discipline"
+  ],
+  "StudentEducationOrganizationAssessmentAccommodation": [
+    "AssessmentRegistration"
+  ],
+  "StudentEducationOrganizationAssociation": [
+    "Enrollment",
+    "StudentIdentificationAndDemographics"
+  ],
+  "StudentEducationOrganizationResponsibilityAssociation": [
+    "Enrollment"
+  ],
+  "StudentGradebookEntry": [
+    "StudentAcademicRecord",
+    "Gradebook"
+  ],
+  "StudentHealth": [
+    "StudentHealth"
+  ],
+  "StudentHomelessProgramAssociation": [
+    "AlternativeAndSupplementalServices"
+  ],
+  "StudentIdentificationCode": [
+    "StudentIdentificationAndDemographics"
+  ],
+  "StudentInterventionAssociation": [
+    "Intervention",
+    "StudentCohort"
+  ],
+  "StudentInterventionAttendanceEvent": [
+    "Intervention"
+  ],
+  "StudentLanguageInstructionProgramAssociation": [
+    "AlternativeAndSupplementalServices"
+  ],
+  "StudentMigrantEducationProgramAssociation": [
+    "AlternativeAndSupplementalServices"
+  ],
+  "StudentNeglectedOrDelinquentProgramAssociation": [
+    "AlternativeAndSupplementalServices"
+  ],
+  "StudentPath": [
+    "Path"
+  ],
+  "StudentPathMilestoneStatus": [
+    "Path"
+  ],
+  "StudentPathPhaseStatus": [
+    "Path"
+  ],
+  "StudentProgramAssociation": [
+    "AlternativeAndSupplementalServices",
+    "SpecialEducation",
+    "StudentAcademicRecord",
+    "StudentAttendance",
+    "TeachingAndLearning",
+    "ReportCard",
+    "SectionsAndPrograms"
+  ],
+  "StudentProgramAttendanceEvent": [
+    "AlternativeAndSupplementalServices",
+    "SpecialEducation",
+    "StudentAttendance"
+  ],
+  "StudentProgramEvaluation": [
+    "TeachingAndLearning",
+    "StudentProgramEvaluation"
+  ],
+  "StudentSchoolAssociation": [
+    "Enrollment",
+    "Graduation",
+    "SchoolCalendar",
+    "TeachingAndLearning",
+    "SectionsAndPrograms"
+  ],
+  "StudentSchoolAttendanceEvent": [
+    "AlternativeAndSupplementalServices",
+    "SpecialEducation",
+    "StudentAttendance"
+  ],
+  "StudentSchoolFoodServiceProgramAssociation": [
+    "AlternativeAndSupplementalServices"
+  ],
+  "StudentSection504ProgramAssociation": [
+    "AlternativeAndSupplementalServices"
+  ],
+  "StudentSectionAssociation": [
+    "AlternativeAndSupplementalServices",
+    "SpecialEducation",
+    "StudentAcademicRecord",
+    "StudentAttendance",
+    "StudentCohort",
+    "TeachingAndLearning",
+    "Gradebook",
+    "ReportCard",
+    "SectionsAndPrograms"
+  ],
+  "StudentSectionAttendanceEvent": [
+    "AlternativeAndSupplementalServices",
+    "SpecialEducation",
+    "StudentAttendance"
+  ],
+  "StudentSpecialEducationProgramAssociation": [
+    "AlternativeAndSupplementalServices",
+    "SpecialEducation"
+  ],
+  "StudentSpecialEducationProgramEligibilityAssociation": [
+    "AlternativeAndSupplementalServices"
+  ],
+  "StudentTitleIPartAProgramAssociation": [
+    "AlternativeAndSupplementalServices"
+  ],
+  "StudentTransportation": [
+    "Enrollment"
+  ],
+  "Survey": [
+    "Survey"
+  ],
+  "SurveyCourseAssociation": [
+    "Survey"
+  ],
+  "SurveyProgramAssociation": [
+    "Survey"
+  ],
+  "SurveyQuestion": [
+    "Survey"
+  ],
+  "SurveyQuestionResponse": [
+    "Survey"
+  ],
+  "SurveyResponse": [
+    "Survey"
+  ],
+  "SurveyResponseEducationOrganizationTargetAssociation": [
+    "Survey"
+  ],
+  "SurveyResponsePersonTargetAssociation": [
+    "Survey"
+  ],
+  "SurveyResponseStaffTargetAssociation": [
+    "Survey"
+  ],
+  "SurveySection": [
+    "Survey"
+  ],
+  "SurveySectionAggregateResponse": [
+    "PerformanceEvaluation"
+  ],
+  "SurveySectionAssociation": [
+    "Survey"
+  ],
+  "SurveySectionResponse": [
+    "Survey"
+  ],
+  "SurveySectionResponseEducationOrganizationTargetAssociation": [
+    "Survey"
+  ],
+  "SurveySectionResponsePersonTargetAssociation": [
+    "Survey"
+  ],
+  "SurveySectionResponseStaffTargetAssociation": [
+    "Survey"
+  ]
+}
