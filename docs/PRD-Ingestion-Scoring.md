@@ -14,7 +14,8 @@ This Ingestion and Scoring PRD covers the following jobs from the overall Metada
 
 * JTBD 1 (Scoring Engine)
 * JTBD 3 (Standardization of Data Collection),
-* JTBD 4 (storage API Specifications),
+* JTBD 4 (Storage of API Specifications),
+* JTBD 6 (Enrichment of API Specifications)
 * and produces the output that will be written into the database --JTBD 7(Storage Engine).
 
 This document covers the two pipelines that make those workflows possible:
@@ -22,7 +23,7 @@ This document covers the two pipelines that make those workflows possible:
 * the **Ingestion Pipeline**, which converts raw SEA artifacts (Swagger/OAS files and supplemental business documentation) into structured, element-level records.
 * and the **Scoring Engine** , which assigns NACHOS complexity scores to those records.
 
-The PRD for the overall Metadata Project is referenced in this link.  **Link To be added**
+The overall Metadata Catalog PRD has an overview of all the project jobs.  See [Metadata Catalog PRD](./PRD.md) for more details.
 
 ### 1.2 Problem Statement
 
@@ -66,11 +67,12 @@ The database will be updated with all the ingestion and scoring information, inc
 |---|---|
 | **State-specific swagger** | in this document, it refers to all the elements that are required by that state for state reporting, including extensions, and if these extensions are necessary or not along with rationale to why they are necessary |
 | **Extension** | Any data element, including a whole entity, not listed in the Ed-Fi Data Standard in a specific version. For example, if the state uses Ed-Fi DS 4.0, then an extension refers to any element or entity not listed in the Ed-FI DS v4.0 |
-| **Source File** |Resulting artifact from the ingestion pipeline - stage 1, is the state's own published documentation that is written for vendors, with one record per element (entity.element) with the state's verbatim text plus a provenance point. |
-| **Spine File** |Resulting artifact from the ingestion pipeline - stage 2, is the Ed-Fi Swagger/API specification that contains the structure (entities, elements, foreign-key chains, descriptors, extension surfaces) that the state-specific documentation is joined to |
+| **Source File** | Resulting artifact from the ingestion pipeline - stage 1, is the state's own published documentation that is written for vendors, with one record per element (entity.element) with the state's verbatim text plus a provenance point. |
+| **Spine File** | Resulting artifact from the ingestion pipeline - stage 2, is the Ed-Fi Swagger/API specification that contains the structure (entities, elements, foreign-key chains, descriptors, extension surfaces) that the state-specific documentation is joined to |
 | **Lens** | A lens is one of two parallel, never-averaged views of a state's data:  Source lens — starts from what the state actually wrote; one row per source-document entry; answers "how clear is the state's authored prose?"; Spine lens — starts from the full canonical Ed-Fi surface; one row per spine (entity, element) pair; answers "how much of Ed-Fi does the state document at all?" |
-| **Gap Log File** |Resulting artifact from the ingestion pipeline, which indicates the spine elements NOT mentioned in the state's source documentation |
-| **In Scope attribute** |Attribute that indicates if the data element needs to be populated by vendors (in-scope = true).  If the element is populated by the state and only read by the vendor, then in-scope = false.  Descriptors are in-scope |
+| **Gap Log File** | Resulting artifact from the ingestion pipeline, which indicates the spine elements NOT mentioned in the state's source documentation |
+| **In Scope attribute** | Attribute that indicates if the data element needs to be populated by vendors (in-scope = true).  If the element is populated by the state and only read by the vendor, then in-scope = false.  Descriptors are in-scope |
+|**Adjudication** | Is the official determination made by an authorized authority or expert panel after reviewing evidence, data, or documentation.  In this case, the authority is the Ed-Fi solutions architecture team, who is reviewing an element and making a decision to officially change and extension determination or complexity score |
 
 ### 1.5 Target Users for this PRD
 
@@ -93,11 +95,11 @@ Excluded from this PRD are: SIS, Assessment or other Vendors, and SEA Staff.
 
 ## 2. Functional Requirements
 
-### 2.1 JTBD 1 — Ingestion Pipeline - IDENTIFIED AS "JTBD 1: Scoring" in Initial PRD
+### 2.1 JTBD 3/4/6 — Ingestion Pipeline
 
 **Story:** As Ed-Fi Alliance Staff, I want to load a state's Swagger/OAS specification and supplemental business documentation into a structured catalog with one row per attribute and the state's specifications, so that I have clean, element-level records with business requirements and standard domain mapping ready for scoring and analysis.
 
-#### 2.1.1 Source Input Collection
+#### 2.1.1 Source Input Collection and Business logic Extraction
 
 **Story:** As a user, I want to view the list of sources used to read business logic and be able to edit those sources — change a path, add more files, or remove an entry — so that I can manage the inputs driving the ingestion without restarting the process from scratch.
 
@@ -116,38 +118,9 @@ The system SHALL support the following source types for supplemental business do
 
 The system SHALL validate that each provided file or URL is resolvable before proceeding. If a source fails validation, the system SHALL report the failure and allow the user to correct or remove the invalid entry without re-submitting valid sources.
 
-#### 2.1.2 Entity Matching to Standard Domain
-
-**Story:** As a user, I want each element from the state Swagger matched to its Ed-Fi standard domain so that the ingestion output identifies the standard domain for every entity and surfaces any elements that could not be matched.
-
-After parsing the Swagger/OAS document(s), the system SHALL match each API entity (resource, descriptor, association) to its corresponding **Ed-Fi Data Standard domain definition** using a standard domain registry.
-
-**Job Story** Each entity needs to be matched to a key domain based on the list of entities per domain provided, in this way, analysis across domains and states can be standardized.  For extended entities without a direct domain map, the process needs to map to the closest domain, based on the common names in the entity title, for example: coursetranscript_ext is very similar to coursetranscript, and therefore allocated to the same domain.  If the entity's name is completely different than an ed-fi entity, then the domain listed will be: state_specific.
-
-The process should try to match the extended entities to domain as much as possible.  
-
-**Job Story** Unmatched entities SHALL be flagged for staff review rather than silently dropped. Staff MAY resolve an unmatched entity by manually mapping it or marking it as a state-specific extension.
-
-The output of the ingestion process SHALL contain one row per attribute with the following columns:
-
-| Column | Description |
-|---|---|
-| `entity_name` | Entity name as it appears in the state's Swagger |
-| `standard_entity` | Best-match entity name from the Ed-Fi Data Standard - CAN WE GET THIS?|
-| `domain` | Ed-Fi domain (e.g., Student, Enrollment, Assessment) |
-| `match_confidence` | High / Medium / Low / Unmatched |
-| `match_notes` | Flags for extension entities, renamed entities, or descriptor overloads |
-| `element_name` | Element name from the state definition |
-| `element_type` | Element type from the Ed-Fi Data Standard |
-| `element_cardinality` | Keys, optional, required, or optional conditional |
-
-### 2.2 JTBD 3 — Scoring Engine
-
-**Story:** As Ed-Fi Alliance Staff, I want to run a scoring engine that assigns a complexity score to each SEA data collection requirement, so that I can help the SEA align their data collection with the Ed-Fi Data Standard.
-
-#### 2.2.1 Business Logic Extraction
-
 The system SHALL accept a second input form — separate from the Swagger input — requesting the path(s) to the state's supplemental **business documentation** (e.g., data dictionaries, collection guides, data submission manuals, annotated spreadsheets).
+
+Note: The POC  ingestion used two  input 1 the Swagger spec, input 2 the business-documentation sources.  The two streams are separate commands (spine fetch / spine build for the swagger; the per-state ingest commands for the documentation), both run at the ingestion stage, and the ingested element record carries the state's verbatim business text with provenance (business_rules_text, element_specific_rules, definition_text, source_document, source_page_or_section).
 
 The system SHALL run process that operates at the **element level**, associating documented business rules to the specific API field or descriptor they govern. The extraction SHALL capture:
 
@@ -155,6 +128,50 @@ The system SHALL run process that operates at the **element level**, associating
 * The extracted business logic text (verbatim quoted span from the source document)
 * The source document and page/section reference (cited span)
 * A confidence score for the extraction
+
+#### 2.1.2 Entity Matching to Standard Domain
+
+**Story:** As a user, I want each element from the state Swagger matched to its Ed-Fi standard domain so that the ingestion output identifies the standard domain for every entity and surfaces any elements that could not be matched.
+
+After parsing the Swagger/OAS document(s), the system SHALL match each API entity (resource, descriptor, association) to its corresponding **Ed-Fi Data Standard domain definition** using a standard domain registry.
+
+**Job Story** Each entity needs to be matched to a key domain based on a list  provided, in this way, analysis across domains and states can be standardized.  For extended entities, the process needs to map these to the closest domain, using the common names in their titles. For example: coursetranscript_ext is very similar to coursetranscript, and therefore allocated to the same domain.  
+
+The process should try to match the extended entities to domain as much as possible.  The POC yields entity matching
+
+**Job Story** Unmatched entities SHALL be flagged for staff review rather than silently dropped. Staff MAY resolve an unmatched entity by manually mapping it or marking it as a state-specific extension.
+
+**Job Story** The history of the state business rules or business requirements needs to be preserved, either with a version or tag, so that the scores and reports can be associated with the tag.
+
+The output of the ingestion process SHALL contain one row per attribute with the following columns:
+
+| Column | Description |
+|---|---|
+| `entity_name` | Entity name as it appears in the state's Swagger |
+| `standard_entity` | Best-matched entity name from the Ed-Fi Data Standard |
+| `domain` | Ed-Fi domain (e.g., Student, Enrollment, Assessment) |
+| `match_confidence` | High / Medium / Low / Unmatched |
+| `match_notes` | Flags for extension entities, renamed entities, or descriptor overloads |
+| `element_name` | Element name from the state definition |
+| `element_type` | Element type from the Ed-Fi Data Standard |
+| `element_cardinality` | Keys, optional, required, or optional conditional |
+| `element_specific_rules` | State requirements for that specific element |
+| `definition_text`| Element definition by the state |
+| `source_document` | which file the element came from (example, the AZ matrix workbook, a WI Confluence page, etc.) |
+| `source_page_or_section` | where the source document file is citing that element |
+| `state_requirements_tag` | timestamp of when the state business rules were updated |
+
+### 2.2 JTBD 3 — Scoring Engine
+
+**Story:** As Ed-Fi Alliance Staff, I want to run a scoring engine that assigns a complexity score to each SEA data collection requirement, so that I can help the SEA align their data collection with the Ed-Fi Data Standard.
+
+The scoring applies a rubric to assign a NACHOS value from 0 to 3, and and Adjusted NACHOS value from 0 to 4.5. The current rubric is listed on a Rubrics document.  This rubric was validated with the community.
+
+#### 2.2.1 Business Logic
+
+The scoring runs extraction over the records produced from the Swagger and Business Requirement ingestion. Scoring never re-reads the raw documents; it extracts facts from the ingested records.  
+
+The system SHALL accept a second input form — separate from the Swagger input — requesting the path(s) to the state's supplemental **business documentation** (e.g., data dictionaries, collection guides, data submission manuals, annotated spreadsheets).
 
 #### 2.2.2 Scope Classification
 
@@ -172,7 +189,7 @@ The classification process SHALL emit a confidence level (High / Medium / Low) a
 
 **Story:** As a user, I want all ingested element data, business logic, and scope classifications automatically stored in the database so that the records are available for scoring and analysis.
 
-The system SHALL write the following data to the storage database for each element:
+The system SHALL write AT A MINIMUM the following data to the storage database for each element:
 
 | Field | Description |
 |---|---|
@@ -186,8 +203,12 @@ The system SHALL write the following data to the storage database for each eleme
 | `element_path` | Full field path within the entity |
 | `standard_entity` | Matched Ed-Fi Data Standard entity |
 | `domain` | Ed-Fi domain |
-| `business_requirements` | Extracted business rule text (null if none) |
-| `cited_span` | Source document reference for the business logic |
+| `element_specific_rules` | Business requirements for that specific element |
+| `definition_text`| Element definition by the state |
+| `source_document` | Name or path to the source document for the business rules |
+| `source_page_or_section` | Title(s), section names or path(s) to the specific page(s) or section(s) with the business rule for that element |
+| `state_requirements_tag` | timestamp of when the state business rules were updated |
+| `cited_span` | A verbatim excerpt from the state's source documentation that supports a specific extracted fact or business-rule claim |
 | `in_scope` | Boolean scope flag |
 | `scope_confidence` | High / Medium / Low |
 | `created_at` | Timestamp of record creation |
@@ -211,68 +232,53 @@ The resulting NACHOS scores and Adjusted NACHOS score for each record have all t
 * Definition quality (present, >= 20 chars, implementable)
 * Element name alignment (matches Ed-Fi's name)
 
-The system SHALL run a Scoring LLM against each in-scope element record produced by the Ingestion Pipeline. For each element the LLM SHALL extract and emit an **evidence record** containing, at minimum:
-
-| Field | Description |
-|---|---|
-| `element_path` | Full field path within the entity |
-| `conditional_logic` | String — does the row describe conditional or branching logic? |
-| `cross_entity_logic` | String — does the row involve lookups or constraints across entity boundaries? |
-| `aggregation` | String — does the row require computed aggregates or derived values? |
-| `concatenation` | String — does the row require string construction from multiple fields? |
-| `semantic_divergence` | Number — does the state narrow, broaden, or redefine the canonical Ed-Fi meaning? |
-| `documentation_style` | `Prescriptive` \| `Conceptual` \| `Cross-reference` \| `Regulatory` \| `Unspecified` |
-| `extension_necessity` | String — does the element require a non-standard extension or descriptor override? |
-| `cited_spans` | List of verbatim excerpts from source documentation that support the above flags |
-| `nachos_score` | Base NACHOS scalar (decimal/float) |
-| `adjusted_nachos` | NACHOS score after semantic-fidelity adjustment (decimal / float) |
-| `adjustment_rationale` | Plain-text explanation of any adjustment applied |
-| `candidate_recommendations` | List of suggested simplification or standardization actions |
-| `firing_rule_path` | The ordered list of rules from the rule cascade that produced this score |
-| `tier_name` | Name of the NACHOS tier matched by the rule cascade |
-| `confidence` | Overall confidence in the score assignment (High / Medium / Low) |
-| `review_routing` | `Auto-accept` \| `Route-for-review` |
+Every scored element shall emit an **evidence record** to be stored in the database. See [Database-entity-details](./design/Database-entity-details.md)
 
 #### 3. Rule Cascade and Score Overrides
 
 **Story:** As a user, I want to see all the rules and cascade elements that are triggered for each row, along with the associated NACHOS score, Adjusted NACHOS score, and the name of the tier matched, so that I can understand exactly how each score was derived.
 
-Staff SHALL be able to inspect the full `firing_rule_path` and `tier_name` for any scored element to understand exactly which rules fired and which tier was matched.
+Ed-Fi Staff SHALL be able to inspect the full `firing_rule_path` and `tier_name` for any scored element to understand exactly which rules fired and which tier was matched.
 
 ---
 
-### 4. List of elements that present some complexity _(Not part of this PRD)_
+### Score Disagreements
 
-Process listed above as part of the solution to manual scoring.  However,this process is not included in this PRD. Analysis of aggregate score data across states and across time is scoped for a future phase in a different job. Requirements will be defined separately.
+After the scoring is completed and stored in the database, the Ed-Fi Staff will review the scores and filter a list of elements with complexity.  This job is not included in this PRD (JBTD 14 Human Review).  
 
----
+The Ed-Fi staff may make some corrections the scores due to a series of cases:
 
-### Score Override
+* Adjudication: The Ed-Fi team may determine a different score after discussions with state agencies. For example, an extension may be deemed necessary due to an undocumented business requirement, or an element may be considered less complex because the complexity is calculated by the state and only the resulting value is provided to vendors.  The team's decision is recorded as an adjudication — who agreed, when, the rationale, and the engine score and plan version at decision time —. The adjudicated results are displayed in the "Adjudicated" fields alongside the original engine-calculated scores or extension assessment.
+  
+* A fact is wrong (an LLM extraction error): correct the fact, and the unchanged rule cascade recomputes both scores, audit-trailed. This is the sanctioned intervention point (fact-level curation — the one path still planned in the POC). It's also where the PRD's "Adjusted must stay consistent with base" instinct is honored, with the engine as the only writer of scores.
+  
+* A rule is wrong.  This refers to the clustering analysis that the model determines.  That's evidence about the methodology, not about rows. The fix is a rule/prompt change plus a scoring-plan version bump, so the whole corpus benefits. The POC's Score Card carries a clustering diagnostic that aggregates override disagreements by adjustment type, direction, and delta, split by contested axis, so this signal surfaces without anyone hunting for it.
 
-**Story:** As a user, I want to adjust scoring rules for specific fields with a rationale, or add new logic specific to a state, and trigger rescoring — with the full history of scoring changes preserved — so that I can refine scores based on domain expertise without losing the prior scoring record.
+ This process is run in the HUMAN Review -JBTD 14.  It is listed in this PRD to clarify any possible implications to the Scoring Process:
 
-The scoring logic SHALL implement the same rule cascade that is run earlier in the process. The rule cascade determines which combination of extracted flags maps to which NACHOS tier and drives the `firing_rule_path` and `tier_name` fields in the evidence record.
+**Story:** As a user, I want to record my judgment on a score with a rationale, see it preserved through every re-run, and have disagreements routed to the right fix — a fact correction, a methodology change, or a team adjudication — so that scores reflect expert review without losing the machine record.
 
-The user can update a NACHOS Score, or a definition of an extension, but needs to indicate the rationale for it.  However, the user should not be capable to rewrite an Adjusted NACHOS Score, because the Adjusted NACHOS is calculated from the NACHOS based on a defined logic.
+ **Job Story:** The system SHALL NOT modify engine scores in response. The USER MAY NOT OVERRIDE the NACHOS or ADJUSTED NACHOS Score or extension necessity.  The system SHALL route any override-vs-engine disagreement for review, naming which score is contested.  
 
 The system SHALL preserve a complete history of scoring changes per element, including the original machine-assigned score, each override or addition applied, the rationale provided, the staff member who made the change, and the resulting new values.
 
-The system SHALL write scores and evidence records to the storage database upon completion of a rescoring, extending each element record with the following fields:
+The engine score is immutable and always visible; human judgment is recorded as a distinct, provenance-carrying layer.
 
-| Field | Description |
+The Human Review Process JBTD 14 SHALL write adjudicated scores and evidence records to the storage database, extending each element record with the following fields:
+
+| Field | Clarification |
 |---|---|
 | `scoring_run_id` | Unique identifier for the scoring run |
-| `nachos_score` | Staff-assigned Base NACHOS score (previous value if not overridden) |
-| `necessary_extension` | Staff-assigned value of necessity of the extension (previous value if not overridden) |
-| `adjusted_nachos` | System recalculated Adjusted NACHOS score (previous value if not overridden) |
-| `former_nachos_score` | Former Base NACHOS score |
-| `former_adjusted_nachos` | Former Adjusted NACHOS score |
-| `former_necessary_extension` | Former value of the necessary extension |
-| `override_rationale` | Staff-provided rationale for override (null if not overridden) |
-| `override_by` | Staff member who applied the override (null if not overridden) |
-| `scored_at` | Timestamp of score assignment |
-
-TBD with Chris, Suganya:  Should we store the new rule mapping when rescoring the element. The concern is that this maybe necessary, because the resulting values originate from either source or spine files which are not being edited.  We may not need to rescore the element.
+| `nachos_score` | System resulting NACHOS |
+| `necessary_extension` | From the ingestion process |
+| `adjusted_nachos` | System resulting Adjusted NACHOS score |
+| `adjudicated_nachos_score` | Adjudicated NACHOS score |
+| `adjudicated_adjusted_nachos` | Adjudicated Adjusted NACHOS score |
+| `adjudicated_necessary_extension` | Adjudication value of the necessary extension |
+| `adjudication_rationale` | Staff-provided rationale for override any or all the values adjudicated (null if not overridden) |
+| `adjudication_by` | Staff member who applied the override (null if not overridden) |
+| `adjudication_status` | is the decision by consensus or with some reservations or clarification |
+| `adjudication_time` | Timestamp of the adjudication being introduced |
 
 ## 3. Non-Functional Requirements
 
@@ -285,23 +291,9 @@ TBD with Chris, Suganya:  Should we store the new rule mapping when rescoring th
 | NFR-DATA-3 | Provenance | Every score SHALL carry a full evidence record persisted alongside the scalar | `evidence_record` JSON column on score table |
 | NFR-SEC-1 | Security | No student data or PII SHALL flow through any pipeline component | Input validation at ingestion form; static analysis gate in CI |
 
-### 3.2 Quality Gates (Evaluating Scoring Accuracy) to be determined in other processes
-
-| ID | Metric | Target | Notes |
-|---|---|---|---|
-| QG-1 | Score-tier alignment | >= 80% | Measured against the evaluation set seeded by Ed-Fi's existing manual scores, treated as human-scored observations, not ground truth |
-| QG-2 | F1 (overall) | >= 0.7 | Calibration signal against evaluation set |
-| QG-3 | F1 (simple / score-zero rows) | >= 0.9 | High precision on simple rows is critical — false positives here create unnecessary review burden |
-| QG-4 | Cohen's Kappa | >= 0.6 | Inter-rater agreement between engine and human reviewer |
-| QG-5 | Disagreement routing | 100% of tier disagreements routed for review | Disagreements are treated as calibration signal, not auto-resolved |
-
-The Quality Gates are calculated by either comparing with the manual results, or by obtaining new inputs from a new manual process.  The Quality Gates should be defined in the analytical engine
-
----
-
 ## 4. Architecture
 
-For technology Stack, Pipeline Overview, Data Model and Environment Variables, please refer to the Data Map document in the docs repo.
+For technology Stack, Pipeline Overview, Data Model and Environment Variables, please refer to the [Database-entity-details](./design/Database-entity-details.md).
 
 ---
 
@@ -315,5 +307,5 @@ The following are explicitly out of scope for this PRD:
 * Vendor-facing score exposure (internal Ed-Fi staff use only in this phase)
 * Natural language query interface (separate capability in the broader initiative)
 * Cluster analysis across states (separate capability)
-* List of elements that carry some complexity and are part of the Human Review (JTBD 14)
+* Human Review processes (JTBD 14)
   
