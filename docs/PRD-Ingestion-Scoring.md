@@ -175,13 +175,13 @@ The system SHALL accept a second input form — separate from the Swagger input 
 
 #### 2.2.2 Scope Classification
 
-**Story:** As a user, I want each element classified as in-scope or out-of-scope based on the scope definition below, so that scoring and analysis focus on the elements that carry real implementation burden for vendors.
+**Story:** As a user, I want each element classified as in-scope or out-of-scope based on the definition below, so that scoring and analysis focus on the elements that carry real implementation burden for vendors.
 
 The system SHALL run a scope classification for each element in the Swagger using the following definitions:
 
-* **In-scope:** An element is in-scope if it is accessible by the vendor (SIS, assessment, or other vendor), and the vendor **can** perform a PUT, POST, or DELETE on it. These are elements where the state sets the requirements and vendors must conform.
+* **In-scope:** An element is in-scope if it is accessible by the vendor (SIS, assessment, or other vendor), and the vendor has to use it in the processes, such as state reporting, or assessment evaluation. The state sets the requirements and vendors must conform.
 
-* **Out-of-scope:** An element is out-of-scope if it is populated by the state and can only be retrieved by vendors via a GET. These are read-only state-owned elements that vendors consume but do not write.
+* **Out-of-scope:** An element not used by the vendor.
 
 The classification process SHALL emit a confidence level (High / Medium / Low) and a brief rationale for each out-of-scope classification. Staff MAY override any classification.
 
