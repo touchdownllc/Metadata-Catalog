@@ -1,6 +1,6 @@
 # Metadata Catalog — Ingestion & Scoring PRD
 
-> **Status:** Draft · **Last updated:** 2026-7-6 · **Owner:** Ed-Fi Alliance Staff
+> **Status:** Draft · **Last updated:** 2026-07-19 · **Owner:** Ed-Fi Alliance Staff
 
 ---
 
@@ -52,7 +52,7 @@ The solution to the problem consists of a series of automated processes that acc
 
 * (5) to support team adjudication of some scores based on state conversations.
 
-**Story: At the end of the ingestion and scoring processes, the storage database will be updated with the state-specific Ed-Fi data model and derived results from the ingestion and scoring pipelines,  so that an analytical engine can read the data to run reports, produce dashboards and run cluster analyses.  The analytical engine will also lists the elements with some complexity scores, so that the Ed-Fi solutions team can discuss alternatives with state agencies to reduce such complexity.**
+**Story: At the end of the ingestion and scoring processes, the storage database will be updated with the state-specific Ed-Fi data model and derived results from the ingestion and scoring pipelines,  so that an analytical engine can read the data to run reports, produce dashboards and run cluster analyses.  The analytical engine will also list the elements with some complexity scores, so that the Ed-Fi solutions team can discuss alternatives with state agencies to reduce such complexity.**
 
 The database will be updated with all the ingestion and scoring information, including
 
@@ -66,13 +66,13 @@ The database will be updated with all the ingestion and scoring information, inc
 | Term | Definition |
 |---|---|
 | **State-specific swagger** | in this document, it refers to all the elements that are required by that state for state reporting, including extensions, and if these extensions are necessary or not along with rationale to why they are necessary |
-| **Extension** | Any data element, including a whole entity, not listed in the Ed-Fi Data Standard in a specific version. For example, if the state uses Ed-Fi DS 4.0, then an extension refers to any element or entity not listed in the Ed-FI DS v4.0 |
+| **Extension** | Any data element, including a whole entity, not listed in the Ed-Fi Data Standard in a specific version. For example, if the state uses Ed-Fi DS 4.0, then an extension refers to any element or entity not listed in the Ed-Fi DS v4.0 |
 | **Source File** | Resulting artifact from the ingestion pipeline - stage 1, is the state's own published documentation that is written for vendors, with one record per element (entity.element) with the state's verbatim text plus a provenance point. |
 | **Spine File** | Resulting artifact from the ingestion pipeline - stage 2, is the Ed-Fi Swagger/API specification that contains the structure (entities, elements, foreign-key chains, descriptors, extension surfaces) that the state-specific documentation is joined to |
 | **Lens** | A lens is one of two parallel, never-averaged views of a state's data:  Source lens — starts from what the state actually wrote; one row per source-document entry; answers "how clear is the state's authored prose?"; Spine lens — starts from the full canonical Ed-Fi surface; one row per spine (entity, element) pair; answers "how much of Ed-Fi does the state document at all?" |
 | **Gap Log File** | Resulting artifact from the ingestion pipeline, which indicates the spine elements NOT mentioned in the state's source documentation |
 | **In Scope attribute** | Attribute that indicates if the data element needs to be populated by vendors (in-scope = true).  If the element is populated by the state and only read by the vendor, then in-scope = false.  Descriptors are in-scope |
-|**Adjudication** | Is the official determination made by an authorized authority or expert panel after reviewing evidence, data, or documentation.  In this case, the authority is the Ed-Fi solutions architecture team, who is reviewing an element and making a decision to officially change and extension determination or complexity score |
+| **Adjudication** | The official determination made by an authorized authority or expert panel after reviewing evidence, data, or documentation.  In this case, the authority is the Ed-Fi solutions architecture team, who is reviewing an element and making a decision to officially change an extension determination or complexity score |
 
 ### 1.5 Target Users for this PRD
 
@@ -103,6 +103,8 @@ Excluded from this PRD are: SIS, Assessment or other Vendors, and SEA Staff.
 
 The system SHALL retain prior ingestion snapshots rather than replacing them, each keyed by its `run_id`.
 
+The ingestion pipeline SHALL produce the Source File, Spine File, and Gap Log File defined in 1.4.
+
 #### 2.1.1 Source Input Collection and Business logic Extraction
 
 **Story:** As a user, I want to view the list of sources used to read business logic and be able to edit those sources — change a path, add more files, or remove an entry — so that I can manage the inputs driving the ingestion without restarting the process from scratch.
@@ -126,7 +128,7 @@ The system SHALL accept a second input form — separate from the Swagger input 
 
 Note: The POC  ingestion used two  input 1 the Swagger spec, input 2 the business-documentation sources.  The two streams are separate commands (spine fetch / spine build for the swagger; the per-state ingest commands for the documentation), both run at the ingestion stage, and the ingested element record carries the state's verbatim business text with provenance (business_rules_text, element_specific_rules, definition_text, source_document, source_page_or_section).
 
-The system SHALL run process that operates at the **element level**, associating documented business rules to the specific API field or descriptor they govern. The extraction SHALL capture:
+The system SHALL run a process that operates at the **element level**, associating documented business rules to the specific API field or descriptor they govern. The extraction SHALL capture:
 
 * The element name (field path within the entity)
 * The extracted business logic text (verbatim quoted span from the source document)
@@ -141,7 +143,7 @@ After parsing the Swagger/OAS document(s), the system SHALL match each API entit
 
 **Job Story** Each entity needs to be matched to a key domain based on a list  provided, in this way, analysis across domains and states can be standardized.  For extended entities, the process needs to map these to the closest domain, using the common names in their titles. For example: coursetranscript_ext is very similar to coursetranscript, and therefore allocated to the same domain.  
 
-The process should try to match the extended entities to domain as much as possible.  The POC yields entity matching
+The process should try to match the extended entities to a domain as much as possible.
 
 **Job Story** Unmatched entities SHALL be flagged for staff review rather than silently dropped. Staff MAY resolve an unmatched entity by manually mapping it or marking it as a state-specific extension.
 
@@ -167,7 +169,7 @@ The output of the ingestion process SHALL contain one row per attribute with the
 
 **Story:** As Ed-Fi Alliance Staff, I want to run a scoring engine that assigns a complexity score to each SEA data collection requirement, so that I can help the SEA align their data collection with the Ed-Fi Data Standard.
 
-The scoring applies a rubric to assign a NACHOS value from 0 to 3, and and Adjusted NACHOS value from 0 to 4.5. The current rubric is listed on a Rubrics document.  This rubric was validated with the community.
+The scoring applies a rubric to assign a NACHOS value from 0 to 3, and an Adjusted NACHOS value from 0 to 4.5. The current rubric is listed on a Rubrics document.  This rubric was validated with the community.
 
 #### 2.2.1 Business Logic
 
@@ -197,9 +199,9 @@ The system SHALL write AT A MINIMUM the following data to the storage database f
 | `state_id` | State identifier |
 | `entity_name` | Entity name from the state's Swagger |
 | `element_name` | Name of the element as defined by the state |
-| `data_type` | WHether it is a descriptor, reference, string |
+| `data_type` | Whether it is a descriptor, reference, or string |
 | `cardinality` | Keys, optional, required, or optional conditional |
-| `source` | WHether it is core or extension |
+| `source` | Whether it is core or extension |
 | `element_path` | Full field path within the entity |
 | `standard_entity` | Matched Ed-Fi Data Standard entity |
 | `domain` | Ed-Fi domain |
@@ -231,7 +233,7 @@ The system SHALL write AT A MINIMUM the following data to the storage database f
 * Definition quality (present, >= 20 chars, implementable)
 * Element name alignment (matches Ed-Fi's name)
 
-Every scored element shall emit an **evidence record** to be stored in the database. See [Database-entity-details](./design/Database-entity-details.md)
+Every scored element SHALL emit an **evidence record** to be stored in the database. See [Database-entity-details](./design/Database-entity-details.md).
 
 #### 2.2.5 Rule Cascade
 
@@ -243,17 +245,17 @@ Ed-Fi Staff SHALL be able to inspect the full `firing_rule_path` and `tier_name`
 
 ### 2.3 Score Disagreements
 
-After the scoring is completed and stored in the database, the Ed-Fi Staff will review the scores and filter a list of elements with complexity.  This job is not included in this PRD (JBTD 14 Human Review).  
+After the scoring is completed and stored in the database, the Ed-Fi Staff will review the scores and filter a list of elements with complexity.  This job is not included in this PRD (JTBD 14 Human Review).
 
-The Ed-Fi staff may make some corrections the scores due to a series of cases:
+The Ed-Fi staff may make some corrections to the scores due to a series of cases:
 
-* Adjudication: The Ed-Fi team may determine a different score after discussions with state agencies. For example, an extension may be deemed necessary due to an undocumented business requirement, or an element may be considered less complex because the complexity is calculated by the state and only the resulting value is provided to vendors.  The team's decision is recorded as an adjudication — who agreed, when, the rationale, and the engine score and plan version at decision time —. The adjudicated results are displayed in the "Adjudicated" fields alongside the original engine-calculated scores or extension assessment.
+* Adjudication: The Ed-Fi team may determine a different score after discussions with state agencies. For example, an extension may be deemed necessary due to an undocumented business requirement, or an element may be considered less complex because the complexity is calculated by the state and only the resulting value is provided to vendors.  The team's decision is recorded as an adjudication — who agreed, when, the rationale, and the engine score and plan version at decision time. The adjudicated results are displayed in the "Adjudicated" fields alongside the original engine-calculated scores or extension assessment.
   
 * A fact is wrong (an LLM extraction error): staff correct the fact, and the unchanged rule cascade recomputes both scores, audit-trailed. This is the sanctioned intervention point (fact-level curation), and it keeps the engine as the only writer of scores: Adjusted stays consistent with base because both are recomputed from the corrected fact.
   
 * A rule is wrong: when disagreements cluster on the same adjustment type or direction, that is evidence about the methodology, not about individual rows. The fix is a rule/prompt change plus a scoring-plan version bump, so the whole corpus benefits. The Score Card's clustering diagnostic aggregates disagreements by adjustment type, direction, and delta, split by contested axis, so the pattern surfaces without anyone hunting for it.
 
- This process is run in the HUMAN Review -JBTD 14.  It is listed in this PRD to clarify any possible implications to the Scoring Process:
+This process is run in Human Review (JTBD 14).  It is listed in this PRD to clarify any possible implications to the Scoring Process:
 
 **Story:** As a user, I want to record my judgment on a score with a rationale, see it preserved through every re-run, and have disagreements routed to the right fix — a fact correction, a methodology change, or a team adjudication — so that scores reflect expert review without losing the machine record.
 
@@ -311,4 +313,3 @@ The following are explicitly out of scope for this PRD:
 * Natural language query interface (separate capability in the broader initiative)
 * Cluster analysis across states (separate capability)
 * Human Review processes (JTBD 14)
-  
