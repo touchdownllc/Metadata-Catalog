@@ -38,7 +38,7 @@ Manual scoring is slow, inconsistent across reviewers, and does not scale to the
 
 ### 1.3 Solutions to the Problem
 
-The ingestion process, and an LLM-assisted pipeline that produces auditable, human-overridable scores produce the output for dashboards and other analytics, and the list of elements that require evaluation to reduce complexity.
+The ingestion process, and an LLM-assisted pipeline that produces auditable, human-reviewable scores produce the output for dashboards and other analytics, and the list of elements that require evaluation to reduce complexity.
 
 The solution to the problem consists of a series of automated processes that accomplish these functions:
 
@@ -50,7 +50,7 @@ The solution to the problem consists of a series of automated processes that acc
   
 * (4) to produce a list of elements that should be reviewed with the states, in order to reduce their complexity; and
 
-* (5) to support a manual override of some scores based on state conversations.
+* (5) to support team adjudication of some scores based on state conversations.
 
 **Story: At the end of the ingestion and scoring processes, the storage database will be updated with the state-specific Ed-Fi data model and derived results from the ingestion and scoring pipelines,  so that an analytical engine can read the data to run reports, produce dashboards and run cluster analyses.  The analytical engine will also lists the elements with some complexity scores, so that the Ed-Fi solutions team can discuss alternatives with state agencies to reduce such complexity.**
 
@@ -59,7 +59,7 @@ The database will be updated with all the ingestion and scoring information, inc
 * Updated swagger for any state, indicating the elements that are sent to SIS, Assessment or any other vendor for their processes, including extended entities, and/or extended elements within core entities.
 * Updated business logic, which indicates what processes have to be run for a vendor to send that element.  A data element can trigger multiple business logic.
 * NACHOS and Adjusted NACHOS Scores for each element, rationale for the scores, along with the applicable recommendations.
-* Updated business logic and scores from manual review and rationale for the updates.
+* Adjudicated scores and extension determinations from human review, with rationale.
 
 ### 1.4 Term Definitions
 
@@ -87,7 +87,7 @@ Excluded from this PRD are: SIS, Assessment or other Vendors, and SEA Staff.
 
 **Auditability over automation.** Every score is traceable to an evidence record. A score without a traceable rationale is not acceptable.
 
-**Human override is a feature, not an exception.** Staff can override any machine-assigned score. Overrides and their rationale are persisted alongside the original evidence record.
+**Human judgment is a feature, not an exception.** Staff can record a judgment on any machine-assigned score, with rationale, persisted alongside the original evidence record, never as an edit to the engine's output.
 
 **No student data, no PII.** The system is scoped exclusively to specification metadata. No student data or personally identifiable information flows through any component at any time.
 
@@ -98,6 +98,10 @@ Excluded from this PRD are: SIS, Assessment or other Vendors, and SEA Staff.
 ### 2.1 JTBD 3/4/6 — Ingestion Pipeline
 
 **Story:** As Ed-Fi Alliance Staff, I want to load a state's Swagger/OAS specification and supplemental business documentation into a structured catalog with one row per attribute and the state's specifications, so that I have clean, element-level records with business requirements and standard domain mapping ready for scoring and analysis.
+
+**Job Story:** The history of the state business rules and business requirements needs to be preserved, with each ingestion snapshot identified by a tag, so that scores and reports can be associated with the exact requirements they were computed against.
+
+The system SHALL retain prior ingestion snapshots rather than replacing them, each keyed by its `run_id`.
 
 #### 2.1.1 Source Input Collection and Business logic Extraction
 
@@ -141,8 +145,6 @@ The process should try to match the extended entities to domain as much as possi
 
 **Job Story** Unmatched entities SHALL be flagged for staff review rather than silently dropped. Staff MAY resolve an unmatched entity by manually mapping it or marking it as a state-specific extension.
 
-**Job Story** The history of the state business rules or business requirements needs to be preserved, either with a version or tag, so that the scores and reports can be associated with the tag.
-
 The output of the ingestion process SHALL contain one row per attribute with the following columns:
 
 | Column | Description |
@@ -159,9 +161,9 @@ The output of the ingestion process SHALL contain one row per attribute with the
 | `definition_text`| Element definition by the state |
 | `source_document` | which file the element came from (example, the AZ matrix workbook, a WI Confluence page, etc.) |
 | `source_page_or_section` | where the source document file is citing that element |
-| `state_requirements_tag` | timestamp of when the state business rules were updated |
+| `state_requirements_tag` | Identifier of the ingestion snapshot (state + `run_id` + ingestion date) whose business rules this record reflects |
 
-### 2.2 JTBD 3 — Scoring Engine
+### 2.2 JTBD 1 — Scoring Engine
 
 **Story:** As Ed-Fi Alliance Staff, I want to run a scoring engine that assigns a complexity score to each SEA data collection requirement, so that I can help the SEA align their data collection with the Ed-Fi Data Standard.
 
@@ -171,19 +173,17 @@ The scoring applies a rubric to assign a NACHOS value from 0 to 3, and and Adjus
 
 The scoring runs extraction over the records produced from the Swagger and Business Requirement ingestion. Scoring never re-reads the raw documents; it extracts facts from the ingested records.  
 
-The system SHALL accept a second input form — separate from the Swagger input — requesting the path(s) to the state's supplemental **business documentation** (e.g., data dictionaries, collection guides, data submission manuals, annotated spreadsheets).
-
 #### 2.2.2 Scope Classification
 
 **Story:** As a user, I want each element classified as in-scope or out-of-scope based on the definition below, so that scoring and analysis focus on the elements that carry real implementation burden for vendors.
 
 The system SHALL run a scope classification for each element in the Swagger using the following definitions:
 
-* **In-scope:** An element is in-scope if it is accessible by the vendor (SIS, assessment, or other vendor), and the vendor has to use it in the processes, such as state reporting, or assessment evaluation. The state sets the requirements and vendors must conform.
+* **In-scope:** An element is in-scope if the vendor (SIS, assessment, or other vendor) must supply (write or send) that element to meet the state's requirements, in processes such as state reporting or assessment evaluation. The state sets the requirements and vendors must conform. Descriptors are in-scope.
 
-* **Out-of-scope:** An element not used by the vendor.
+* **Out-of-scope:** An element the state populates and the vendor only reads, or an element the vendor does not touch at all.
 
-The classification process SHALL emit a confidence level (High / Medium / Low) and a brief rationale for each out-of-scope classification. Staff MAY override any classification.
+The classification process SHALL emit a confidence level (High / Medium / Low) and a brief rationale for each out-of-scope classification. Staff MAY correct any classification (see 2.3).
 
 #### 2.2.3 Data Storage
 
@@ -198,7 +198,7 @@ The system SHALL write AT A MINIMUM the following data to the storage database f
 | `entity_name` | Entity name from the state's Swagger |
 | `element_name` | Name of the element as defined by the state |
 | `data_type` | WHether it is a descriptor, reference, string |
-| `cardinality` | WHether the element is an identity, required or optional |
+| `cardinality` | Keys, optional, required, or optional conditional |
 | `source` | WHether it is core or extension |
 | `element_path` | Full field path within the entity |
 | `standard_entity` | Matched Ed-Fi Data Standard entity |
@@ -207,7 +207,7 @@ The system SHALL write AT A MINIMUM the following data to the storage database f
 | `definition_text`| Element definition by the state |
 | `source_document` | Name or path to the source document for the business rules |
 | `source_page_or_section` | Title(s), section names or path(s) to the specific page(s) or section(s) with the business rule for that element |
-| `state_requirements_tag` | timestamp of when the state business rules were updated |
+| `state_requirements_tag` | Identifier of the ingestion snapshot (state + `run_id` + ingestion date) whose business rules this record reflects |
 | `cited_span` | A verbatim excerpt from the state's source documentation that supports a specific extracted fact or business-rule claim |
 | `in_scope` | Boolean scope flag |
 | `scope_confidence` | High / Medium / Low |
@@ -219,8 +219,7 @@ The system SHALL write AT A MINIMUM the following data to the storage database f
 
 **Story:** As a user, I want the scoring engine to extract facts from the business logic using an LLM, evaluate deterministic facts computed from the record structure, and assign scores using a rules cascade, so that each element has a well-supported, auditable complexity score.
 
-**Acceptance Criteria:** DRAFT
-The resulting NACHOS scores and Adjusted NACHOS score for each record have all the rationale criteria that trigger the scoring, so that a user can link the actual scores to the rationale, and then link the rationale to the swagger and elements that trigger that rationale.
+**Acceptance Criteria:** The resulting NACHOS scores and Adjusted NACHOS score for each record have all the rationale criteria that trigger the scoring, so that a user can link the actual scores to the rationale, and then link the rationale to the swagger and elements that trigger that rationale.
 
 **NACHOS Score Context (peer signal).** Every scored row SHALL carry key dimension results from the scoring process, beside the scalar and the previous elements listed. These elements are most likely produced by the LLM or deterministic questions.  These are:
 
@@ -228,13 +227,13 @@ The resulting NACHOS scores and Adjusted NACHOS score for each record have all t
 * business_logic_complexity (Conditional | Conceptual | Cross-reference | Regulatory | Unspecified),
 * All the Drivers for adjustment (necessary extension | Unnecessary extension | cross-entity logic)
 * Extension_justification  (why is necessary, or standalone)
-* Semantic_fidelity (TO BE CONFIRMED: narrowed/broadened/divergent?)
+* Semantic_fidelity (aligned | divergent-explained | divergent-unclear)
 * Definition quality (present, >= 20 chars, implementable)
 * Element name alignment (matches Ed-Fi's name)
 
 Every scored element shall emit an **evidence record** to be stored in the database. See [Database-entity-details](./design/Database-entity-details.md)
 
-#### 3. Rule Cascade and Score Overrides
+#### 2.2.5 Rule Cascade
 
 **Story:** As a user, I want to see all the rules and cascade elements that are triggered for each row, along with the associated NACHOS score, Adjusted NACHOS score, and the name of the tier matched, so that I can understand exactly how each score was derived.
 
@@ -242,7 +241,7 @@ Ed-Fi Staff SHALL be able to inspect the full `firing_rule_path` and `tier_name`
 
 ---
 
-### Score Disagreements
+### 2.3 Score Disagreements
 
 After the scoring is completed and stored in the database, the Ed-Fi Staff will review the scores and filter a list of elements with complexity.  This job is not included in this PRD (JBTD 14 Human Review).  
 
@@ -250,35 +249,39 @@ The Ed-Fi staff may make some corrections the scores due to a series of cases:
 
 * Adjudication: The Ed-Fi team may determine a different score after discussions with state agencies. For example, an extension may be deemed necessary due to an undocumented business requirement, or an element may be considered less complex because the complexity is calculated by the state and only the resulting value is provided to vendors.  The team's decision is recorded as an adjudication — who agreed, when, the rationale, and the engine score and plan version at decision time —. The adjudicated results are displayed in the "Adjudicated" fields alongside the original engine-calculated scores or extension assessment.
   
-* A fact is wrong (an LLM extraction error): correct the fact, and the unchanged rule cascade recomputes both scores, audit-trailed. This is the sanctioned intervention point (fact-level curation — the one path still planned in the POC). It's also where the PRD's "Adjusted must stay consistent with base" instinct is honored, with the engine as the only writer of scores.
+* A fact is wrong (an LLM extraction error): staff correct the fact, and the unchanged rule cascade recomputes both scores, audit-trailed. This is the sanctioned intervention point (fact-level curation), and it keeps the engine as the only writer of scores: Adjusted stays consistent with base because both are recomputed from the corrected fact.
   
-* A rule is wrong.  This refers to the clustering analysis that the model determines.  That's evidence about the methodology, not about rows. The fix is a rule/prompt change plus a scoring-plan version bump, so the whole corpus benefits. The POC's Score Card carries a clustering diagnostic that aggregates override disagreements by adjustment type, direction, and delta, split by contested axis, so this signal surfaces without anyone hunting for it.
+* A rule is wrong: when disagreements cluster on the same adjustment type or direction, that is evidence about the methodology, not about individual rows. The fix is a rule/prompt change plus a scoring-plan version bump, so the whole corpus benefits. The Score Card's clustering diagnostic aggregates disagreements by adjustment type, direction, and delta, split by contested axis, so the pattern surfaces without anyone hunting for it.
 
  This process is run in the HUMAN Review -JBTD 14.  It is listed in this PRD to clarify any possible implications to the Scoring Process:
 
 **Story:** As a user, I want to record my judgment on a score with a rationale, see it preserved through every re-run, and have disagreements routed to the right fix — a fact correction, a methodology change, or a team adjudication — so that scores reflect expert review without losing the machine record.
 
- **Job Story:** The system SHALL NOT modify engine scores in response. The USER MAY NOT OVERRIDE the NACHOS or ADJUSTED NACHOS Score or extension necessity.  The system SHALL route any override-vs-engine disagreement for review, naming which score is contested.  
+**Job Story:** The system SHALL NOT modify engine scores in response to human judgment. Staff MAY NOT edit the NACHOS score, the Adjusted NACHOS score, or the extension-necessity value; judgments are recorded as adjudications beside the engine's values. The system SHALL flag any element whose engine score changes while a standing adjudication exists, naming which value is contested, and route it for re-adjudication.
 
-The system SHALL preserve a complete history of scoring changes per element, including the original machine-assigned score, each override or addition applied, the rationale provided, the staff member who made the change, and the resulting new values.
+The system SHALL preserve a complete history of scoring changes per element, including the original machine-assigned score, each adjudication applied, the rationale provided, the staff who made the decision, and the resulting adjudicated values.
 
 The engine score is immutable and always visible; human judgment is recorded as a distinct, provenance-carrying layer.
 
-The Human Review Process JBTD 14 SHALL write adjudicated scores and evidence records to the storage database, extending each element record with the following fields:
+The story's "preserved through every re-run" clause depends on two further requirements:
+
+* Re-scoring with unchanged inputs and an unchanged scoring-plan version SHALL reproduce the same machine scores. Scores replay from cached evidence records under a versioned scoring plan.
+* Adjudication rationale SHALL NOT be an input to scoring. A new state business rule enters through the source-update path (edit the sources, re-ingest, re-score) so every score stays traceable to a cited span. Rationale documents the decision; it does not participate in it.
+
+Writing adjudications is the Human Review job (JTBD 14, out of scope here); this PRD's requirement is that the storage schema accommodate them. Adjudications persist as **curation records** (see `curation_records` in [Database-entity-details](./design/Database-entity-details.md)). Each adjudication appends a new record; records are never updated or deleted. The score record itself (`score_records` in the same document) keeps only the engine's current values; adjudications never write to it.
+
+Each adjudication record SHALL carry:
 
 | Field | Clarification |
 |---|---|
-| `scoring_run_id` | Unique identifier for the scoring run |
-| `nachos_score` | System resulting NACHOS |
-| `necessary_extension` | From the ingestion process |
-| `adjusted_nachos` | System resulting Adjusted NACHOS score |
-| `adjudicated_nachos_score` | Adjudicated NACHOS score |
-| `adjudicated_adjusted_nachos` | Adjudicated Adjusted NACHOS score |
-| `adjudicated_necessary_extension` | Adjudication value of the necessary extension |
-| `adjudication_rationale` | Staff-provided rationale for override any or all the values adjudicated (null if not overridden) |
-| `adjudication_by` | Staff member who applied the override (null if not overridden) |
-| `adjudication_status` | is the decision by consensus or with some reservations or clarification |
-| `adjudication_time` | Timestamp of the adjudication being introduced |
+| Adjudicated value(s) | Any or all of: NACHOS score, Adjusted NACHOS score, extension necessity |
+| Rationale | Staff-provided rationale for the decision |
+| Participants | Who agreed — adjudication is a team determination (see 1.4) |
+| Status | Consensus, or with reservations / clarification |
+| Decided at | Timestamp of the adjudication |
+| Pinned context | The engine scores, scoring-plan version, and `state_requirements_tag` at decision time, so a later run can detect that the engine has moved out from under a standing decision |
+
+Adjudication-specific fields not yet present in `curation_records` (participants, status, and the pinned context) need to be added there, so the record shape stays authoritative in one place.
 
 ## 3. Non-Functional Requirements
 
@@ -286,14 +289,14 @@ The Human Review Process JBTD 14 SHALL write adjudicated scores and evidence rec
 
 | ID | Category | Requirement | Implementation |
 |---|---|---|---|
-| NFR-DATA-1 | Data Integrity | All ingestion and scoring runs SHALL be transactional — no partial writes | Database transaction wrapping each run |
-| NFR-DATA-2 | Provenance | Every ingestion record SHALL carry a `run_id`, `state_id`, and `created_at` timestamp | Applied at write time |
-| NFR-DATA-3 | Provenance | Every score SHALL carry a full evidence record persisted alongside the scalar | `evidence_record` JSON column on score table |
+| NFR-ING-1 | Data Integrity | All ingestion and scoring runs SHALL be transactional — no partial writes | Database transaction wrapping each run |
+| NFR-ING-2 | Provenance | Every ingestion record SHALL carry a `run_id`, `state_id`, and `created_at` timestamp | Applied at write time |
+| NFR-ING-3 | Provenance | Every score SHALL carry a full evidence record persisted alongside the scalar | `evidence_record` JSON column on score table |
 | NFR-SEC-1 | Security | No student data or PII SHALL flow through any pipeline component | Input validation at ingestion form; static analysis gate in CI |
 
 ## 4. Architecture
 
-For technology Stack, Pipeline Overview, Data Model and Environment Variables, please refer to the [Database-entity-details](./design/Database-entity-details.md).
+The data model is specified in [Database-entity-details](./design/Database-entity-details.md). The Technology Stack, Pipeline Overview, and Environment Variables will be specified in a forthcoming pipeline design document.
 
 ---
 
