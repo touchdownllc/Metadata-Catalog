@@ -35,6 +35,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from src.score.client import DEFAULT_MODEL
+from src.score.azure_client import build_runtime_client
 from src.score.deterministic import (
     LENS_INDEPENDENT_FACTS,
     SHARED_CONTEXT_FACTS,
@@ -356,6 +357,9 @@ def run_all(
     # lens runs widen the inner order with ``SOURCE_DETERMINISTIC_FACTS``
     # so ``aggregate --lens source`` downstream finds every artifact it
     # needs without a follow-up extraction pass.
+    runtime = build_runtime_client(model=model)
+    model = runtime.model
+
     requested_states = {s.upper() for s in states}
     ordered_states = [s for s in SUPPORTED_STATES if s in requested_states]
     requested_facts = set(facts)

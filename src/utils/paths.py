@@ -17,6 +17,24 @@ _SPINE_DIR = _PROJECT_ROOT / "data" / "spine"
 Lens = Literal["source", "spine"]
 
 
+def _safe_path_component(value: str) -> str:
+    """Return a Windows-safe path component derived from ``value``.
+
+    Cache namespaces may include characters such as ``:`` that are
+    valid in cache keys and headers but invalid in Windows directory
+    names. Keep the component readable while stripping reserved
+    characters and trimming trailing dots/spaces.
+    """
+    cleaned = []
+    for char in value:
+        if char in '<>:"/\\|?*':
+            cleaned.append("_")
+        else:
+            cleaned.append(char)
+    result = "".join(cleaned).rstrip(". ")
+    return result or "default"
+
+
 def project_root() -> Path:
     """Return the POC-3 project root (parent of `src/` and `data/`)."""
     return _PROJECT_ROOT
@@ -90,7 +108,14 @@ def scoring_phase_a_artifact_path(state: str, fact: str, lens: Lens = "spine") -
 
 def scoring_cache_dir(model: str, prompt_version: str) -> Path:
     """Return `data/cache/scoring/{model}/{prompt_version}/` — mode-agnostic prompt cache."""
-    return _PROJECT_ROOT / "data" / "cache" / "scoring" / model / prompt_version
+    return (
+        _PROJECT_ROOT
+        / "data"
+        / "cache"
+        / "scoring"
+        / _safe_path_component(model)
+        / _safe_path_component(prompt_version)
+    )
 
 
 def scoring_batches_dir() -> Path:

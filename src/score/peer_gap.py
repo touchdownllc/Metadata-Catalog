@@ -36,7 +36,8 @@ import jsonschema
 
 from src.models.element import ElementRecord, StateElements
 from src.score.cache import Cache, cache_key
-from src.score.client import DEFAULT_MODEL, AnthropicClient, LLMClient, LLMResponse
+from src.score.azure_client import build_runtime_client
+from src.score.client import DEFAULT_MODEL, LLMClient, LLMResponse
 # Shared dispatch engine + atomic JSONL writer (issue #213 item 3) —
 # the writer keeps its historical private name.
 from src.score.dispatch import (
@@ -571,9 +572,14 @@ def run(
             "status": "complete",
         }
 
-    cache = Cache(model, prompt_version, root=cache_root)
     if client is None:
-        client = AnthropicClient(model=model)
+        runtime_client = build_runtime_client(model=model)
+        client = runtime_client.client
+        model = runtime_client.model
+    else:
+        model = getattr(client, "model", model)
+
+    cache = Cache(model, prompt_version, root=cache_root)
 
     artifact_path = out_root / _ARTIFACT_NAME
     telemetry = PeerGapTelemetry(bundle_count=len(bundles))

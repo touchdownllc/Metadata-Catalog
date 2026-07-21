@@ -175,6 +175,7 @@ _PRICING_USD_PER_MTOK_BATCH: dict[str, tuple[float, float]] = {
 
 _MAX_ATTEMPTS = 3
 _BASE_DELAY_S = 2.0
+_RATE_LIMIT_WAIT_RE = re.compile(r"please\s+wait\s+(\d+)\s+seconds", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -221,6 +222,42 @@ class LLMClient(Protocol):
 
 def _price_for(model: str) -> tuple[float, float, float, float]:
     return _PRICING_USD_PER_MTOK.get(model, (3.0, 15.0, 3.75, 0.30))
+
+
+def _retry_delay_s(exc: Exception, attempt: int) -> float:
+    """Return retry delay for transient Anthropic transport errors.
+
+    Rate-limit responses may carry a concrete wait window (header or
+    message text such as "Please wait 60 seconds"). Honor that window
+    so we do not burn attempts on guaranteed-too-early retries.
+    """
+    delay = _BASE_DELAY_S * (2 ** (attempt - 1))
+    delay += random.uniform(0, _BASE_DELAY_S)
+
+    if not isinstance(exc, anthropic.RateLimitError):
+        return delay
+
+    wait_s: float | None = None
+    response = getattr(exc, "response", None)
+    headers = getattr(response, "headers", None)
+    if headers is not None:
+        raw_retry_after = headers.get("retry-after")
+        if raw_retry_after:
+            try:
+                wait_s = max(float(raw_retry_after), 0.0)
+            except ValueError:
+                wait_s = None
+
+    if wait_s is None:
+        match = _RATE_LIMIT_WAIT_RE.search(str(exc))
+        if match:
+            wait_s = float(match.group(1))
+
+    if wait_s is None:
+        return delay
+
+    # Tiny jitter avoids synchronized retries across concurrent workers.
+    return max(delay, wait_s + random.uniform(0, 1.0))
 
 
 def _usd_for(
@@ -382,8 +419,7 @@ class AnthropicClient:
                 last_err = exc
                 if attempt == _MAX_ATTEMPTS:
                     raise
-                delay = _BASE_DELAY_S * (2 ** (attempt - 1))
-                delay += random.uniform(0, _BASE_DELAY_S)
+                delay = _retry_delay_s(exc, attempt)
                 _LOGGER.warning(
                     "anthropic call failed (attempt %d/%d): %s — retrying in %.1fs",
                     attempt, _MAX_ATTEMPTS, exc, delay,

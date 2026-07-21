@@ -1687,7 +1687,7 @@ def review_correct_fact(
 def main() -> None:
     """Console-script entry point for `mc` and `python -m mc`.
 
-    Loads a repo-root `.env` (if present) before dispatching so that
+    Loads a `.env` (if present) before dispatching so that
     `ANTHROPIC_API_KEY` and any future secrets don't need to be exported
     into the shell. Already-set env vars win — `.env` is a default, not
     an override. `.env` is gitignored; see `.env.example` for the
@@ -1695,7 +1695,9 @@ def main() -> None:
     """
     from dotenv import load_dotenv
 
-    load_dotenv(dotenv_path=Path(__file__).resolve().parents[2] / ".env", override=False)
+    # Search from the current working directory upward so both source
+    # runs and packaged exe runs can pick up the active .env.
+    load_dotenv(override=False)
     cli(prog_name="mc")
 
 
