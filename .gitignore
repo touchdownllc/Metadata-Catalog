@@ -1,3 +1,7 @@
 *.local.json
 .worktrees/
 docs/superpowers/
+# Environment variables
+.env
+.env.local
+.env.*.local
