@@ -1,0 +1,551 @@
+{
+  "batches": [
+    {
+      "cache_key": "d4851356522ae22f510de326fe0b5c94795400aabb28f3688999cbad38167ac6",
+      "element_count": 7,
+      "element_names": [
+        "beginDate",
+        "calendarCode",
+        "calendarTypeDescriptor",
+        "endDate",
+        "schoolId",
+        "schoolYear",
+        "totalInstructionalDays"
+      ],
+      "entity": "Calendar",
+      "index": 0,
+      "prompt_file": "000_Calendar.prompt.md"
+    },
+    {
+      "cache_key": "e12cf0835232ac64b7be5b72a44f5c9d8cc0d92fb591874f76259d3306686efc",
+      "element_count": 4,
+      "element_names": [
+        "calendarCode",
+        "date",
+        "schoolId",
+        "schoolYear"
+      ],
+      "entity": "CalendarDate",
+      "index": 1,
+      "prompt_file": "001_CalendarDate.prompt.md"
+    },
+    {
+      "cache_key": "cf0796fc075c16ca5ad38965872ee98786b4039c68697406cd11c70670a0534a",
+      "element_count": 1,
+      "element_names": [
+        "calendarEventDescriptor"
+      ],
+      "entity": "CalendarDateCalendarEvent",
+      "index": 2,
+      "prompt_file": "002_CalendarDateCalendarEvent.prompt.md"
+    },
+    {
+      "cache_key": "6880c318aedaa0b8eb008137395b72e70f32d231bd61b33fde199221d22f7f3b",
+      "element_count": 2,
+      "element_names": [
+        "classPeriodName",
+        "schoolId"
+      ],
+      "entity": "ClassPeriod",
+      "index": 3,
+      "prompt_file": "003_ClassPeriod.prompt.md"
+    },
+    {
+      "cache_key": "3bae9cd497bffa3e5dcd39d7c21ed81abc52cafb5197794537b1225f5116c8e6",
+      "element_count": 8,
+      "element_names": [
+        "contactUniqueId",
+        "firstName",
+        "generationCodeSuffix",
+        "lastSurname",
+        "maidenName",
+        "middleName",
+        "personalTitlePrefix",
+        "sexDescriptor"
+      ],
+      "entity": "Contact",
+      "index": 4,
+      "prompt_file": "004_Contact.prompt.md"
+    },
+    {
+      "cache_key": "531615439069f690bb78d157f16862207a55b98407b71f2a0a513fc15a3ef7ce",
+      "element_count": 5,
+      "element_names": [
+        "courseCode",
+        "courseDescription",
+        "courseTitle",
+        "dateCourseAdopted",
+        "educationOrganizationId"
+      ],
+      "entity": "Course",
+      "index": 5,
+      "prompt_file": "005_Course.prompt.md"
+    },
+    {
+      "cache_key": "f676d44684d3bfe48cac3bbd430dd6a2404e756e097f16eca4f705093e839644",
+      "element_count": 8,
+      "element_names": [
+        "courseCode",
+        "educationOrganizationId",
+        "endOfCourseAssessmentCodeDescriptor",
+        "localCourseCode",
+        "localCourseTitle",
+        "schoolId",
+        "schoolYear",
+        "sessionName"
+      ],
+      "entity": "CourseOffering",
+      "index": 6,
+      "prompt_file": "006_CourseOffering.prompt.md"
+    },
+    {
+      "cache_key": "b9cb0aadb84c3193c5b920f93e62f5509d418533486ed242d232fd6e01819484",
+      "element_count": 2,
+      "element_names": [
+        "instructionalMinutesPlanned",
+        "scheduleDate"
+      ],
+      "entity": "CourseOfferingCourseSchedule",
+      "index": 7,
+      "prompt_file": "007_CourseOfferingCourseSchedule.prompt.md"
+    },
+    {
+      "cache_key": "bbb592b7fa9ff316dfecf463eb9ee5af80862c9a4b9863254c9e29d0aeb0f6be",
+      "element_count": 15,
+      "element_names": [
+        "alternativeCourseTitle",
+        "attemptedCredits",
+        "courseAttemptResultDescriptor",
+        "courseCode",
+        "courseEducationOrganizationId",
+        "courseTitle",
+        "earnedCredits",
+        "educationOrganizationId",
+        "externalEducationOrganizationEducationOrganizationId",
+        "finalLetterGradeDescriptor",
+        "finalLetterGradeEarned",
+        "schoolYear",
+        "studentUniqueId",
+        "termDescriptor",
+        "whenTakenGradeLevelDescriptor"
+      ],
+      "entity": "CourseTranscript",
+      "index": 8,
+      "prompt_file": "008_CourseTranscript.prompt.md"
+    },
+    {
+      "cache_key": "64fd8ff2fa7500785218f85f1e4ed09fbf6d9d2372dd8915ce3f4f5f2eeb1441",
+      "element_count": 12,
+      "element_names": [
+        "BehaviorDescriptorId",
+        "IncidentIdentifier",
+        "actualDisciplineActionLength",
+        "assignmentSchoolSchoolId",
+        "disciplineActionIdentifier",
+        "disciplineDate",
+        "disciplineEndDate",
+        "parentDeclinedServices",
+        "responsibilitySchoolSchoolId",
+        "schoolId",
+        "servicesProvided",
+        "studentUniqueId"
+      ],
+      "entity": "DisciplineAction",
+      "index": 9,
+      "prompt_file": "009_DisciplineAction.prompt.md"
+    },
+    {
+      "cache_key": "198349bf899d0dd2a4c6025ee7ce89509333f64244a5bb19e33567ea2be21304",
+      "element_count": 1,
+      "element_names": [
+        "disciplineDescriptor"
+      ],
+      "entity": "DisciplineActionDiscipline",
+      "index": 10,
+      "prompt_file": "010_DisciplineActionDiscipline.prompt.md"
+    },
+    {
+      "cache_key": "517c90ba15042ede0fc5842183b021bc321534858a2c93af4cccd9922c92aa6f",
+      "element_count": 5,
+      "element_names": [
+        "StaffUniqueID",
+        "incidentDate",
+        "incidentIdentifier",
+        "reporterName",
+        "schoolId"
+      ],
+      "entity": "DisciplineIncident",
+      "index": 11,
+      "prompt_file": "011_DisciplineIncident.prompt.md"
+    },
+    {
+      "cache_key": "aaf3223af1a32246177eb51bd97f84f05e2d3c702fbef3c7bd4f4d6282099828",
+      "element_count": 2,
+      "element_names": [
+        "EducationOrganizationID",
+        "NameOfInstitution"
+      ],
+      "entity": "EducationOrganization",
+      "index": 12,
+      "prompt_file": "012_EducationOrganization.prompt.md"
+    },
+    {
+      "cache_key": "5d7af6f1c6df890e697bc28568e8627af447870dc3a6f99c59b8c73056395ea4",
+      "element_count": 2,
+      "element_names": [
+        "EducationOrganizationID",
+        "educationOrganizationCategoryDescriptor"
+      ],
+      "entity": "EducationOrganizationCategory",
+      "index": 13,
+      "prompt_file": "013_EducationOrganizationCategory.prompt.md"
+    },
+    {
+      "cache_key": "92b3e0a93b84fc56c84c88fbfac941d981812496dd31d7aea688d751267c6e05",
+      "element_count": 9,
+      "element_names": [
+        "evaluationCriterionDescription",
+        "evaluationRubricRating",
+        "programEducationOrganizationId",
+        "programEvaluationElementTitle",
+        "programEvaluationPeriodDescriptor",
+        "programEvaluationTitle",
+        "programEvaluationTypeDescriptor",
+        "programName",
+        "programTypeDescriptor"
+      ],
+      "entity": "EvaluationRubricDimension",
+      "index": 14,
+      "prompt_file": "014_EvaluationRubricDimension.prompt.md"
+    },
+    {
+      "cache_key": "097f0105782ebc897b0d9ae4ebbaad82e414b628315faa41516c68c7c03b60dc",
+      "element_count": 3,
+      "element_names": [
+        "localEducationAgencyCategoryDescriptor",
+        "localEducationAgencyId",
+        "stateEducationAgencyId"
+      ],
+      "entity": "LocalEducationAgency",
+      "index": 15,
+      "prompt_file": "015_LocalEducationAgency.prompt.md"
+    },
+    {
+      "cache_key": "7a970f191c1391c73dcc8038ff82e20e0df95f9a88d160fa3174866dce72cda5",
+      "element_count": 2,
+      "element_names": [
+        "classroomIdentificationCode",
+        "schoolId"
+      ],
+      "entity": "Location",
+      "index": 16,
+      "prompt_file": "016_Location.prompt.md"
+    },
+    {
+      "cache_key": "a2a98f28be45e30014ab54af19eeda13be5af59f07ee623a8b54e6de8636ec5f",
+      "element_count": 8,
+      "element_names": [
+        "asdbEligibilityDate",
+        "dddEligibilityDate",
+        "educationOrganizationId",
+        "exitDate",
+        "ifspExitReasonDescriptor",
+        "initialIFSPDate",
+        "latestIFSPDate",
+        "studentUniqueId"
+      ],
+      "entity": "PartCAZEIP",
+      "index": 17,
+      "prompt_file": "017_PartCAZEIP.prompt.md"
+    },
+    {
+      "cache_key": "308a3c04d032e6f04331d7b129313519d9b33a51d1a447f9e0791f0f7b36401b",
+      "element_count": 4,
+      "element_names": [
+        "educationOrganizationId",
+        "notificationDate",
+        "publicEducationOrganizationEducationOrganizationId",
+        "studentUniqueId"
+      ],
+      "entity": "PartCNotification",
+      "index": 18,
+      "prompt_file": "018_PartCNotification.prompt.md"
+    },
+    {
+      "cache_key": "9a2a64f6316d811937382679d9364919ef78657799d0185533cad55254ad6343",
+      "element_count": 6,
+      "element_names": [
+        "DelayDescriptorId",
+        "educationOrganizationId",
+        "meetingDate",
+        "peaAttendance",
+        "publicEducationOrganizationEducationOrganizationId",
+        "studentUniqueId"
+      ],
+      "entity": "PartCTransition",
+      "index": 19,
+      "prompt_file": "019_PartCTransition.prompt.md"
+    },
+    {
+      "cache_key": "ecc3b43e11fe620348efa7bd458405cbb8b4e172b128efacf967b5dd0ad31b5e",
+      "element_count": 4,
+      "element_names": [
+        "ProgramTypeID",
+        "educationOrganizationId",
+        "programName",
+        "programTypeDescriptor"
+      ],
+      "entity": "Program",
+      "index": 20,
+      "prompt_file": "020_Program.prompt.md"
+    },
+    {
+      "cache_key": "10dbb070c3e8faefd1a5de5aad1e116de8fda3f05c99918e4a4dd81329748e8b",
+      "element_count": 7,
+      "element_names": [
+        "programEducationOrganizationId",
+        "programEvaluationDescription",
+        "programEvaluationPeriodDescriptor",
+        "programEvaluationTitle",
+        "programEvaluationTypeDescriptor",
+        "programName",
+        "programTypeDescriptor"
+      ],
+      "entity": "ProgramEvaluation",
+      "index": 21,
+      "prompt_file": "021_ProgramEvaluation.prompt.md"
+    },
+    {
+      "cache_key": "7df56943b25b7b3bf0c7ecd01c359801a3818fc55967dfc1634e880804213d2c",
+      "element_count": 10,
+      "element_names": [
+        "elementMaxNumericRating",
+        "elementMinNumericRating",
+        "programEducationOrganizationId",
+        "programEvaluationElementDescription",
+        "programEvaluationElementTitle",
+        "programEvaluationPeriodDescriptor",
+        "programEvaluationTitle",
+        "programEvaluationTypeDescriptor",
+        "programName",
+        "programTypeDescriptor"
+      ],
+      "entity": "ProgramEvaluationElement",
+      "index": 22,
+      "prompt_file": "022_ProgramEvaluationElement.prompt.md"
+    },
+    {
+      "cache_key": "f2975114b77cd813d75ce12f23b3e70b6d33e635ff00cd5ee3609216bae51c64",
+      "element_count": 4,
+      "element_names": [
+        "charterStatusDescriptor",
+        "localEducationAgencyId",
+        "schoolId",
+        "schoolTypeDescriptor"
+      ],
+      "entity": "School",
+      "index": 23,
+      "prompt_file": "023_School.prompt.md"
+    },
+    {
+      "cache_key": "047cd9c8c24d05d0878144a794e48774ca8556e9d79e15b502a6a191a51125bb",
+      "element_count": 12,
+      "element_names": [
+        "availableCredits",
+        "educationalEnvironmentDescriptor",
+        "localCourseCode",
+        "minutesPerWeek",
+        "note",
+        "schoolId",
+        "schoolYear",
+        "sectionIdentifier",
+        "sequenceOfCourse",
+        "sessionName",
+        "siteLocationSchoolSchoolId",
+        "timetableDayIdentifier"
+      ],
+      "entity": "Section",
+      "index": 24,
+      "prompt_file": "024_Section.prompt.md"
+    },
+    {
+      "cache_key": "e04baefb9641a1a2af286fca821e993279a232675bc079cf0d173ec008d0886b",
+      "element_count": 2,
+      "element_names": [
+        "classPeriodName",
+        "schoolId"
+      ],
+      "entity": "SectionClassPeriod",
+      "index": 25,
+      "prompt_file": "025_SectionClassPeriod.prompt.md"
+    },
+    {
+      "cache_key": "c96167cc28266595128316d40ac5442577365ce8a858e5b0f53f2d7179d3066a",
+      "element_count": 1,
+      "element_names": [
+        "courseLevelCharacteristicDescriptor"
+      ],
+      "entity": "SectionCourseLevelCharacteristic",
+      "index": 26,
+      "prompt_file": "026_SectionCourseLevelCharacteristic.prompt.md"
+    },
+    {
+      "cache_key": "a85558c4405d0bf11d870939e5c28f1710120e1b442cdffdc3a8b3528dd50000",
+      "element_count": 6,
+      "element_names": [
+        "beginDate",
+        "classroomPositionDescriptor",
+        "endDate",
+        "externalProviderName",
+        "providerTeacherFirstName",
+        "providerTeacherLastName"
+      ],
+      "entity": "SectionExternalProviderTeacher",
+      "index": 27,
+      "prompt_file": "027_SectionExternalProviderTeacher.prompt.md"
+    },
+    {
+      "cache_key": "e33eb1e2b87e0d30be1c20062c35d4f6a5690ec6bce39897bc6448234eaa3034",
+      "element_count": 1,
+      "element_names": [
+        "gradeLevelDescriptor"
+      ],
+      "entity": "SectionOfferedGradeLevel",
+      "index": 28,
+      "prompt_file": "028_SectionOfferedGradeLevel.prompt.md"
+    },
+    {
+      "cache_key": "879d30f661bc72328a18a9f291dbd196e5ef3abd493e3702bbc0d006f46b6023",
+      "element_count": 7,
+      "element_names": [
+        "beginDate",
+        "endDate",
+        "schoolId",
+        "schoolYear",
+        "sessionName",
+        "termDescriptor",
+        "totalInstructionalDays"
+      ],
+      "entity": "Session",
+      "index": 29,
+      "prompt_file": "029_Session.prompt.md"
+    },
+    {
+      "cache_key": "8b44c144312772542ccff6015bd051d9f3614af440a0012854fe85977cd5b868",
+      "element_count": 8,
+      "element_names": [
+        "birthDate",
+        "firstName",
+        "generationCodeSuffix",
+        "lastSurname",
+        "maidenName",
+        "middleName",
+        "personalTitlePrefix",
+        "staffUniqueId"
+      ],
+      "entity": "Staff",
+      "index": 30,
+      "prompt_file": "030_Staff.prompt.md"
+    },
+    {
+      "cache_key": "ce59191fc7fccc2766ac2577fcfd1ebae8346f035ac0ebc79777a44f3563aa2c",
+      "element_count": 4,
+      "element_names": [
+        "educationOrganizationId",
+        "hispanicLatinoEthnicity",
+        "sexDescriptor",
+        "staffUniqueId"
+      ],
+      "entity": "StaffDemographic",
+      "index": 31,
+      "prompt_file": "031_StaffDemographic.prompt.md"
+    },
+    {
+      "cache_key": "1202a70f5799f44265ad5d7b49262ed0df94bc8a2044e6e81343f71941667a2c",
+      "element_count": 2,
+      "element_names": [
+        "educationOrganizationId",
+        "staffUniqueId"
+      ],
+      "entity": "StaffDirectory",
+      "index": 32,
+      "prompt_file": "032_StaffDirectory.prompt.md"
+    },
+    {
+      "cache_key": "c0736db8ad0d68af7adba2d02924c021d9ab1ae485d84253658deca86adde520",
+      "element_count": 2,
+      "element_names": [
+        "electronicMailAddress",
+        "electronicMailTypeDescriptor"
+      ],
+      "entity": "StaffDirectoryElectronicMail",
+      "index": 33,
+      "prompt_file": "033_StaffDirectoryElectronicMail.prompt.md"
+    },
+    {
+      "cache_key": "e4c0a0d578baf5070b7f06c94bbb6da12c305c85a4606dc5e0fdf3601287d474",
+      "element_count": 6,
+      "element_names": [
+        "beginDate",
+        "educationOrganizationId",
+        "endDate",
+        "positionTitle",
+        "staffClassificationDescriptor",
+        "staffUniqueId"
+      ],
+      "entity": "StaffEducationOrganizationAssignmentAssociation",
+      "index": 34,
+      "prompt_file": "034_StaffEducationOrganizationAssignmentAssociation.prompt.md"
+    },
+    {
+      "cache_key": "9eb0d1f0d1888867d9ca81f5718bae582db7aa3b0996204d9a2575d49e865c06",
+      "element_count": 5,
+      "element_names": [
+        "assigningOrganizationIdentificationCode",
+        "educationOrganizationId",
+        "identificationCode",
+        "staffIdentificationSystemDescriptor",
+        "staffUniqueId"
+      ],
+      "entity": "StaffIdentificationCode",
+      "index": 35,
+      "prompt_file": "035_StaffIdentificationCode.prompt.md"
+    },
+    {
+      "cache_key": "87e1215a3b911f15a487ba198ace9be5535989c22aa82031a8bac49d0408320a",
+      "element_count": 10,
+      "element_names": [
+        "beginDate",
+        "classroomPositionDescriptor",
+        "endDate",
+        "localCourseCode",
+        "percentageContribution",
+        "schoolId",
+        "schoolYear",
+        "sectionIdentifier",
+        "sessionName",
+        "staffUniqueId"
+      ],
+      "entity": "StaffSectionAssociation",
+      "index": 36,
+      "prompt_file": "036_StaffSectionAssociation.prompt.md"
+    },
+    {
+      "cache_key": "ea4d57cd4eec6865655807aadca990ed2ef7f3b60c9da0d8f457956eeb38251e",
+      "element_count": 3,
+      "element_names": [
+        "BirthCountryCodeDescriptorID",
+        "birthDate",
+        "birthSexDescriptor"
+      ],
+      "entity": "Student",
+      "index": 37,
+      "prompt_file": "037_Student.prompt.md"
+    }
+  ],
+  "fact": "has_conditional_logic",
+  "lens": "spine",
+  "model": "claude-sonnet-4-6",
+  "prompt_version": "phase-a.v1",
+  "state": "AZ"
+}

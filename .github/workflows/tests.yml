@@ -1,0 +1,61 @@
+# Hermetic test lane (ported from POC-3) — plus lint/type lane.
+#
+# Runs the suite with `-m "not realdata"`: the realdata-marked tests need
+# locally generated data/ artifacts (gitignored) and run only on a machine
+# that has executed `mc publish`. $0 LLM by construction — no API key
+# secret exists here and `mc score` is never invoked.
+#
+# The lint job runs ruff + mypy with the pyproject config (both deliberately
+# tuned green-on-current-tree — see the [tool.ruff]/[tool.mypy] comments).
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: uv sync
+      - name: Run hermetic test suite
+        run: uv run pytest -q -m "not realdata"
+
+  # Windows leg — ported from POC-3 (issue #214 Part B item 8 there). It
+  # validates Windows path handling in the hermetic lane; this repo's
+  # `utils/paths.py` now carries Windows-specific cache-path logic, so the
+  # leg stays enforcing. Same marker filter as the Linux leg.
+  pytest-windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: uv sync
+      - name: Run hermetic test suite
+        run: uv run pytest -q -m "not realdata"
+
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: uv sync
+      - name: ruff
+        run: uv run ruff check
+      - name: mypy
+        run: uv run mypy
