@@ -91,6 +91,7 @@
         "source.fixAll.markdownlint": "explicit"
     },
     "cSpell.words": [
-        "browsable"
+        "browsable",
+        "inspectable"
     ]
 }

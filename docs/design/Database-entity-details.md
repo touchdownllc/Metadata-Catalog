@@ -257,6 +257,15 @@ older `fact_run_id` versions separately. The default current-state model should
 be: latest ingest snapshot in `source_elements` / `spine_elements`, latest
 derived fact snapshot in `fact_observations`.
 
+**Analyst fact corrections never rewrite this table.** Corrections to
+LLM-extracted facts (see `curation_records.facts`) are applied as an overlay at
+score-aggregate time; `fact_observations` and the prompt cache stay the
+immutable record of what the model said. A corrected fact's value in
+`score_records` therefore intentionally diverges from this table —
+`fact_provenance` marks it `human_corrected`, and that marker is the
+reconciliation key. Any integrity check asserting that score facts match
+observations must exempt human-corrected facts.
+
 ## Entity: `score_records`
 
 **Summary** One row per scored element, written by `poc3 score aggregate`. This
@@ -267,7 +276,10 @@ the input for analyst workbooks and reviewer comparisons.
 
 **Created at stage** Phase-C scoring step — `poc3 score aggregate --state
 <state> --lens <source|spine>`. The aggregate pipeline writes to populate this
-table.
+table. Aggregate consumes fact observations plus the state's curation data:
+same-lens analyst fact corrections (`curation_records.facts`) are overlaid onto
+the loaded fact pool before the rule cascade runs, so rows here derive from
+facts and standing corrections together — not from `fact_observations` alone.
 
 | Field | Description | Data Type |
 |---|---|---|
@@ -285,7 +297,7 @@ table.
 | `discovery_lens` | Provenance: `source` for source-doc rows, `spine_anchored` for gap-recovered rows | TEXT |
 | `documentation_source` | Provenance label: `source_doc`, `swagger`, or `swagger_leaf` | TEXT |
 | `dimensions` | Per-dimension score objects (value, rule_matched, inputs_used, confidence) | JSONB |
-| `fact_provenance` | Per-fact audit trail (value, confidence, downgraded, downgrade_reason, spans) | JSONB |
+| `fact_provenance` | Per-fact audit trail (value, confidence, downgraded, downgrade_reason, spans). When an analyst fact correction replaced the extracted value at aggregate time, the entry additionally carries `provenance = 'human_corrected'` with confidence forced to `high`, downgrade flags cleared, and spans dropped; the key is emitted only when set, so uncorrected facts are byte-identical to before. Absent `provenance` means model-extracted. | JSONB |
 | `review` | Review block (needs_review, reasons, route) | JSONB |
 
 **Does scoring erase and recreate all rows for a state?** Yes. Each aggregate
@@ -293,32 +305,44 @@ run deletes all rows where `state = <state> AND lens = <lens>` before inserting
 the new snapshot. Re-running `poc3 score aggregate` for a state+lens fully
 replaces that lens's scored rows. Source-lens and spine-lens rows are
 independent — aggregating one lens does not affect the other lens's rows.
+Each run also re-reads the curation data, so standing fact corrections
+re-apply to every new snapshot. A correction recorded after the last aggregate
+run is `pending re-aggregate` until the next run — a status derivable by
+comparing `curation_records.facts` against this table's `fact_provenance`
+(states: `applied`, `pending re-aggregate`, `record gone`).
 
 ---
 
 ## Entity: `curation_records`
 
-**Summary** Analyst-input curation band captured by `poc3 review ingest` from
-returned review workbooks and persisted per state in committed sidecars. This
-data is keyed by the same record key used in `score_records`
-(`STATE\|Entity\|element_name`) and stores human edits that are not derivable
-from source documents or swagger reprocessing. It includes score overrides,
-reviewed flags, analyst comments, and commitment-tracker fields (adoption
-timeline and commitment status), each with author and timestamp metadata.
+**Summary** Human curation persisted per state in committed sidecars, keyed by
+the same record key used in `score_records` (`STATE\|Entity\|element_name`).
+Three kinds of human input live here, none derivable from source documents or
+swagger reprocessing: (1) the workbook analyst-input band captured by
+`poc3 review ingest` — score overrides on both axes, reviewed flags, analyst
+comments, and commitment-tracker fields; (2) an optional per-record
+`adjudication` block — team consensus on the adjusted score, written by
+`poc3 review adjudicate`; (3) an optional per-record `facts` block — analyst
+corrections to LLM-extracted facts, written by `poc3 review correct-fact` and
+applied as a scoring input on the next aggregate run. Every value carries
+author and timestamp metadata.
 
-**Created at stage** Review ingest step — `poc3 review ingest` writes to the
-`curation_records` table.
+**Created at stage** Review step — three writers: `poc3 review ingest`
+(workbook band, from returned review workbooks), `poc3 review adjudicate`
+(adjudication block), and `poc3 review correct-fact` (fact corrections). The
+latter two are CLI-direct and involve no workbook round-trip.
 
 | Field | Description | Data Type |
 |---|---|---|
 | `state` | State code. Sidecar file is `data/curation/{state}.json` (lowercase filename); record keys use uppercase code. | TEXT |
-| `version` | Sidecar schema version (currently `1`) | INTEGER |
-| `updated_at` | Most recent ingest touching the state's sidecar (file-level in today's sidecar; per-record recency is in each value's `ingested_at`) | TIMESTAMPTZ |
+| `version` | Sidecar schema version (currently `3`: v2 added the `adjudication` block, v3 the `facts` block). Additive-convergent: older files stay readable — the newer blocks are simply absent — and converge to the current version on their next write; no bulk rewrite. | INTEGER |
+| `updated_at` | Most recent write touching the state's sidecar (file-level in today's sidecar; per-record recency is in each value's `ingested_at`, an adjudication's `decided_at`, or a fact correction's `corrected_at`) | TIMESTAMPTZ |
 | `record_key` | Element key in the form `STATE\|Entity\|element_name`, same key `score_records` uses. Lens-agnostic: one row per element covers both lenses. | TEXT |
 | `entity` | Normalized entity name (derived from key) | TEXT |
 | `element_name` | Field or property name (derived from key) | TEXT |
 | `reviewed` | Workbook `Reviewed?` (stored as `{ value, author, ingested_at, source_workbook, workbook_generated, lens }`) | JSONB |
-| `analyst_adjusted_override` | Workbook `Analyst Adjusted Score (override)`. Only numeric curated column; never replaces engine score. Disagreement with engine score routes row to review. Stored as `{ value, author, ingested_at, source_workbook, workbook_generated, lens }`. | JSONB |
+| `analyst_adjusted_override` | Workbook `Analyst Adjusted Score (override)` — the analyst's contested value for the headline adjusted score. Numeric; never replaces the engine score. Disagreement with the engine's adjusted score routes the row to review (one OVERRIDE queue row per contested axis; a fresh adjudication suppresses this axis's row). Stored as `{ value, author, ingested_at, source_workbook, workbook_generated, lens }`. | JSONB |
+| `analyst_base_override` | Workbook `Analyst Base Score (override)` — the analyst's contested value for the rule-cascade base tier, so the headline score and the tier can be contested independently. Same numeric handling and per-axis review routing as the adjusted override, gated on its own captured lens. Stored as `{ value, author, ingested_at, source_workbook, workbook_generated, lens }`. | JSONB |
 | `required` | Workbook `Required` (stored as `{ value, author, ingested_at, source_workbook, workbook_generated, lens }`) | JSONB |
 | `recommendations` | Workbook `Recommendations` (stored as `{ value, author, ingested_at, source_workbook, workbook_generated, lens }`) | JSONB |
 | `edfi_comments` | Workbook Details-sheet `Ed-Fi Comments` (stored as `{ value, author, ingested_at, source_workbook, workbook_generated, lens }`) | JSONB |
@@ -330,17 +354,28 @@ timeline and commitment status), each with author and timestamp metadata.
 | `adoption_timeline` | Commitment tracker adoption window (stored as `{ value, author, ingested_at, source_workbook, workbook_generated, lens }`) | JSONB |
 | `commitment_status` | Commitment tracker negotiation status (stored as `{ value, author, ingested_at, source_workbook, workbook_generated, lens }`) | JSONB |
 | `commitment_comments` | Commitment-tracker free-form notes (stored as `{ value, author, ingested_at, source_workbook, workbook_generated, lens }`) | JSONB |
-| `history` | Per-record change history (single list capped at 50 entries), each entry shaped `{ column, value, author, replaced_at, source_workbook }` | JSONB |
+| `adjudication` | Team-consensus block for the record's adjusted score, written by `poc3 review adjudicate` — adjusted axis only, because the base tier is pure rule output (consensus that a tier is wrong is a rule problem, not an adjudication). Shaped `{ status, axis, value, lens, agreed_by, decided_at, rationale, engine_score_at_decision, plan_version_at_decision }`. The engine score is never mutated; the two `_at_decision` stamps make staleness computable at read time — if the engine's adjusted score moves past ±0.01, the plan version changes, or the record is no longer scored, the consensus stops rendering and the row re-enters the review queue as RE-ADJUDICATE. A fresh adjudication renders as `Effective Score (adjudicated)` and suppresses the adjusted-axis override disagreement row. | JSONB |
+| `facts` | Analyst corrections to LLM-extracted facts, keyed by fact name, written by `poc3 review correct-fact`. Each entry shaped `{ value, lens, author, corrected_at, rationale, prior_value, prior_provenance, plan_version_at_correction }`. LLM facts only — deterministic facts are refused (a wrong deterministic value is a code bug, not curation) — and values are validated against the extraction schema before write. Unlike adjudication stamps, `prior_*` and the plan stamp are provenance, not staleness gates: the newest correction always applies on the next `score aggregate` run, where the fact's sidecar provenance becomes `human_corrected`. `prior_provenance` is `llm`, `llm_downgraded:{reason}`, or `human_corrected`. | JSONB |
+| `history` | Per-record change history (single list capped at 50 entries). Band-column entries are shaped `{ column, value, author, replaced_at, source_workbook }`; replaced adjudications and fact corrections append `{ column, value, replaced_at }` where `column` is `adjudication` or `fact:{fact_name}` and `value` preserves the entire prior block (author metadata lives inside the block). | JSONB |
 
 **How are updates handled?** This entity is merge-preserve, not snapshot-replace
 and not status-upsert. Review ingest merges per curated column using newest-wins
 semantics with bounded history. Blank workbook cells do not clear stored values.
-Re-ingest and re-score flows must leave this curation band untouched.
+The adjudication and fact-correction writers follow the same newest-wins plus
+capped-history pattern (the replaced block moves whole into `history`); the
+blank-cell rule applies to the workbook band only, since the CLI writers always
+carry explicit values. Re-ingest and re-score flows must leave this curation
+data untouched — and re-score flows must re-read it, because fact corrections
+are a scoring input.
 
 **Why this entity has a different durability posture** Unlike ingest, fact, and
 score outputs, these rows are human-authored and cannot be regenerated by
 rerunning pipeline stages. They therefore require backup and retention controls
-at least as strict as committed source artifacts.
+at least as strict as committed source artifacts. The `facts` block goes
+further: it is a scoring input — `poc3 score aggregate` overlays
+same-lens corrections onto the fact pool before the rule cascade — so losing
+these rows would change published scores on the next aggregate run, not just
+drop annotations.
 
 ---
 
@@ -366,7 +401,7 @@ querying the full `score_records` table.
 | `skipped_count` | Number of records skipped during scoring | INTEGER |
 | `mean_quality_score` | Arithmetic mean of per-record quality scores for documented-authored rows | DOUBLE PRECISION |
 | `needs_review_count` | Number of rows flagged for reviewer attention | INTEGER |
-| `scoring_plan_version` | Scoring plan version string, e.g. `26` | TEXT |
+| `scoring_plan_version` | Scoring plan version string, e.g. `28`. Rule, prompt, methodology, and sidecar-shape changes bump it (v28 added the `human_corrected` provenance capability); individual fact corrections never do — they are per-row data annotations. | TEXT |
 | `model` | Model identifier used for LLM fact extraction, e.g. `claude-sonnet-4-6` | TEXT |
 | `prompt_version` | Prompt version string, e.g. `phase-a.v1` | TEXT |
 | `in_scope_count` | Number of in-scope rows used for NACHOS histogram and mean | INTEGER |
