@@ -51,16 +51,24 @@ from src.score.schema import ScoringSchemaError
 _LOGGER = logging.getLogger(__name__)
 
 # Env var names exactly as Ed-Fi's additions to `.env` (gitignored).
-AZURE_ANTHROPIC_ENDPOINT_ENV = "ANTHROPIC_API_HAIKU_ENDPOINT"
-AZURE_ANTHROPIC_KEY_ENV = "ANTHROPIC_API_HAIKU_KEY"
+AZURE_ANTHROPIC_HAIKU_ENDPOINT_ENV = "ANTHROPIC_API_HAIKU_ENDPOINT"
+AZURE_ANTHROPIC_HAIKU_KEY_ENV = "ANTHROPIC_API_HAIKU_KEY"
+AZURE_ANTHROPIC_SONNET_ENDPOINT_ENV = "ANTHROPIC_API_SONNET_ENDPOINT"
+AZURE_ANTHROPIC_SONNET_KEY_ENV = "ANTHROPIC_API_SONNET_KEY"
 AZURE_OPENAI_ENDPOINT_ENV = "OPENAPI_API_GPT54"
 AZURE_OPENAI_KEY_ENV = "OPENAPI_API_GPT54_KEY"
+
+# Back-compat aliases for existing imports/callers.
+AZURE_ANTHROPIC_ENDPOINT_ENV = AZURE_ANTHROPIC_HAIKU_ENDPOINT_ENV
+AZURE_ANTHROPIC_KEY_ENV = AZURE_ANTHROPIC_HAIKU_KEY_ENV
 
 # Wire model = the Azure deployment name sent on the request.
 # Namespace = what lands in cache keys, artifact headers, and
 # LLMResponse.model — MUST differ from every production model ID.
 AZURE_HAIKU_WIRE_MODEL = "claude-haiku-4-5"
 AZURE_HAIKU_NAMESPACE = "azure:claude-haiku-4-5"
+AZURE_SONNET_WIRE_MODEL = "claude-sonnet-4-6"
+AZURE_SONNET_NAMESPACE = "azure:claude-sonnet-4-6"
 AZURE_GPT_WIRE_MODEL = "gpt-5.4"
 AZURE_GPT_NAMESPACE = "azure:gpt-5.4"
 
@@ -113,11 +121,11 @@ class AzureAnthropicClient(AnthropicClient):
         model: str = AZURE_HAIKU_NAMESPACE,
         max_tokens: int = 16384,
     ) -> None:
-        raw_endpoint = endpoint or os.environ.get(AZURE_ANTHROPIC_ENDPOINT_ENV)
-        key = api_key or os.environ.get(AZURE_ANTHROPIC_KEY_ENV)
+        raw_endpoint = endpoint or os.environ.get(AZURE_ANTHROPIC_HAIKU_ENDPOINT_ENV)
+        key = api_key or os.environ.get(AZURE_ANTHROPIC_HAIKU_KEY_ENV)
         if not raw_endpoint or not key:
             raise RuntimeError(
-                f"{AZURE_ANTHROPIC_ENDPOINT_ENV} / {AZURE_ANTHROPIC_KEY_ENV} "
+                f"{AZURE_ANTHROPIC_HAIKU_ENDPOINT_ENV} / {AZURE_ANTHROPIC_HAIKU_KEY_ENV} "
                 "not set — the Ed-Fi Azure endpoint + key live in .env "
                 "(see docs/edfi-endpoint-parity-plan.md)"
             )

@@ -153,6 +153,8 @@ _PRICING_USD_PER_MTOK: dict[str, tuple[float, float, float, float]] = {
     # to Ed-Fi's Azure resource; token counts are the authoritative
     # report. See docs/edfi-endpoint-parity-plan.md.
     "azure:claude-haiku-4-5": (1.0, 5.0, 1.25, 0.10),
+    # Ed-Fi Azure Anthropic Sonnet 4.6 namespace.
+    "azure:claude-sonnet-4-6": (3.0, 15.0, 3.75, 0.30),
 }
 
 # Anthropic Batch API pricing — input + output halved; the batch path
@@ -171,6 +173,7 @@ _PRICING_USD_PER_MTOK_BATCH: dict[str, tuple[float, float]] = {
     # Parity-study namespace — never used on the batch path, present
     # only to satisfy the sync/batch table-parity invariant.
     "azure:claude-haiku-4-5": (0.5, 2.5),
+    "azure:claude-sonnet-4-6": (1.5, 7.5),
 }
 
 _MAX_ATTEMPTS = 3

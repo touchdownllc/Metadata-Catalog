@@ -12,14 +12,18 @@ import os
 from dataclasses import dataclass
 
 from src.score.alt_clients import (
-    AZURE_ANTHROPIC_ENDPOINT_ENV,
-    AZURE_ANTHROPIC_KEY_ENV,
+    AZURE_ANTHROPIC_HAIKU_ENDPOINT_ENV,
+    AZURE_ANTHROPIC_HAIKU_KEY_ENV,
+    AZURE_ANTHROPIC_SONNET_ENDPOINT_ENV,
+    AZURE_ANTHROPIC_SONNET_KEY_ENV,
     AZURE_GPT_NAMESPACE,
     AZURE_GPT_WIRE_MODEL,
     AZURE_OPENAI_ENDPOINT_ENV,
     AZURE_OPENAI_KEY_ENV,
     AZURE_HAIKU_NAMESPACE,
     AZURE_HAIKU_WIRE_MODEL,
+    AZURE_SONNET_NAMESPACE,
+    AZURE_SONNET_WIRE_MODEL,
     AzureOpenAIResponsesClient,
     AzureAnthropicClient,
 )
@@ -34,10 +38,17 @@ class RuntimeClient:
     model: str
 
 
-def _has_azure_anthropic_env() -> bool:
+def _has_azure_anthropic_haiku_env() -> bool:
     return bool(
-        os.environ.get(AZURE_ANTHROPIC_ENDPOINT_ENV)
-        and os.environ.get(AZURE_ANTHROPIC_KEY_ENV)
+        os.environ.get(AZURE_ANTHROPIC_HAIKU_ENDPOINT_ENV)
+        and os.environ.get(AZURE_ANTHROPIC_HAIKU_KEY_ENV)
+    )
+
+
+def _has_azure_anthropic_sonnet_env() -> bool:
+    return bool(
+        os.environ.get(AZURE_ANTHROPIC_SONNET_ENDPOINT_ENV)
+        and os.environ.get(AZURE_ANTHROPIC_SONNET_KEY_ENV)
     )
 
 
@@ -58,14 +69,28 @@ def build_runtime_client(
 
         The selector is intentionally environment-driven:
 
-        - if ``ANTHROPIC_API_HAIKU_ENDPOINT`` + ``ANTHROPIC_API_HAIKU_KEY``
-            are set, the pipeline uses ``AzureAnthropicClient``;
+        - if ``ANTHROPIC_API_SONNET_ENDPOINT`` + ``ANTHROPIC_API_SONNET_KEY``
+            are set, the pipeline uses Sonnet 4.6 on
+            ``AzureAnthropicClient``;
+        - otherwise, if ``ANTHROPIC_API_HAIKU_ENDPOINT`` +
+            ``ANTHROPIC_API_HAIKU_KEY`` are set, the pipeline uses
+            Haiku 4.5 on ``AzureAnthropicClient``;
         - otherwise, if ``OPENAPI_API_GPT54`` + ``OPENAPI_API_GPT54_KEY``
             are set, the pipeline uses ``AzureOpenAIResponsesClient``;
         - otherwise it falls back to the standard Anthropic client.
     """
 
-    if _has_azure_anthropic_env():
+    if _has_azure_anthropic_sonnet_env():
+        client = AzureAnthropicClient(
+            endpoint=os.environ[AZURE_ANTHROPIC_SONNET_ENDPOINT_ENV],
+            api_key=os.environ[AZURE_ANTHROPIC_SONNET_KEY_ENV],
+            wire_model=AZURE_SONNET_WIRE_MODEL,
+            model=AZURE_SONNET_NAMESPACE,
+            max_tokens=max_tokens,
+        )
+        return RuntimeClient(client=client, model=client.model)
+
+    if _has_azure_anthropic_haiku_env():
         client = AzureAnthropicClient(
             api_key=api_key,
             wire_model=AZURE_HAIKU_WIRE_MODEL,
