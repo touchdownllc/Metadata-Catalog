@@ -418,6 +418,7 @@ def _run_gap_surface(ctx: StageContext) -> float:
 
 
 def _extract(ctx: StageContext, lens: str) -> float:
+    from src.cli_render import render_run_all_pair
     from src.score.runner import phase_b_facts_for_lens, run_all
 
     manifest = run_all(
@@ -425,6 +426,7 @@ def _extract(ctx: StageContext, lens: str) -> float:
         facts=phase_b_facts_for_lens(lens),
         lens=lens,
         cost_cap=ctx.remaining_cost_cap,
+        progress=render_run_all_pair,
     )
     return float(manifest.total_usd)
 
