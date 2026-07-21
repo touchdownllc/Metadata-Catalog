@@ -1,0 +1,1568 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/Ed-Fi-Alliance-OSS/Metadata-Catalog/main/docs/design/schemas/pipeline-records.schema.json",
+  "title": "Metadata Catalog pipeline record contract (DRAFT)",
+  "description": "Machine-readable companion to docs/design/Database-entity-details.md. Each $def mirrors one entity in that document; the CI contract test validates pipeline-emitted records against these definitions so drift between the pipeline and the database fails a build instead of surfacing at integration. Under the agreed delivery model - ingestion and scoring land their outputs as jsonb payloads and the database transforms downstream - this schema is the primary drift gate: the landing zone itself accepts any payload, so this check is what catches an emit change before it breaks a transform. For score records this schema defers to POC-3's committed release contract (docs/contracts/assessment-release.schema.json, generated from score/release_contract.py) - same envelope roster - and covers what it does not: element records, fact artifacts, curation sidecars, gap logs. Doc, this schema, and the transforms change together through the MC-17 change flow. Record types set additionalProperties:false deliberately - an emitted field with no contract entry is drift, and drift must fail. Evidence payloads (dimensions, fact_provenance, review, raw_payload, header) stay open objects: the scorer owns their internals.",
+  "$defs": {
+    "state_code": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}$",
+      "description": "Two-letter state code, e.g. AZ, WI, MN, TX, IN"
+    },
+    "lens": {
+      "type": "string",
+      "enum": [
+        "source",
+        "spine"
+      ],
+      "description": "The two parallel, never-averaged views; part of the grain on every scored table"
+    },
+    "record_key": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}\\|[^|]+\\|.+$",
+      "description": "STATE|Entity|element_name - the join key across scored and curated data"
+    },
+    "confidence_level": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ]
+    },
+    "element_source": {
+      "type": "string",
+      "enum": [
+        "core",
+        "extension",
+        "unknown",
+        "filtered"
+      ],
+      "description": "Element origin"
+    },
+    "documentation_source": {
+      "type": "string",
+      "enum": [
+        "source_doc",
+        "swagger",
+        "swagger_leaf"
+      ]
+    },
+    "match_confidence": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low",
+        "unmatched"
+      ],
+      "description": "Entity-to-standard-domain match confidence; unmatched entities are flagged for staff review, never silently dropped"
+    },
+    "cardinality": {
+      "type": "string",
+      "enum": [
+        "keys",
+        "required",
+        "optional",
+        "optional_conditional"
+      ]
+    },
+    "assessor_type": {
+      "type": "string",
+      "description": "Open string, deliberately not a closed enum (ADR 0018): 'engine' today; 'second-model', 'human', 'synthesis' are ordinary future values, not schema changes. A population-scale sweep over a snapshot; adjudication is not an assessor type."
+    },
+    "data_completeness": {
+      "type": "string",
+      "enum": [
+        "pipeline_full",
+        "pipeline_machine_only",
+        "legacy_import"
+      ],
+      "description": "Distinguishes 'absent because legacy' from 'absent because something broke'. legacy_import rows cannot claim full provenance."
+    },
+    "documentation_style": {
+      "type": "string",
+      "enum": [
+        "prescriptive",
+        "conceptual",
+        "cross_reference",
+        "regulatory",
+        "unspecified"
+      ],
+      "description": "The extracted documentation_style fact behind the documentation_style_tier dimension (the PRD's 'business_logic_complexity'; the PRD's 'Conditional' value is the pipeline's 'prescriptive')."
+    },
+    "adjustment_driver": {
+      "type": "string",
+      "enum": [
+        "unnecessary_ext",
+        "necessary_ext",
+        "multi_entity",
+        "fidelity_divergent_explained",
+        "fidelity_divergent_unclear"
+      ],
+      "description": "The pipeline's canonical adjustment tokens (aggregate.ADJ_LABEL_*, byte-pinned inside nachos_justification). A structured adjustment_drivers array is proposed emit work; these are the agreed token spellings."
+    },
+    "state_requirement_basis": {
+      "type": "string",
+      "enum": [
+        "law_or_regulation",
+        "state_reporting_mandate",
+        "state_program_requirement",
+        "none",
+        "unresolved"
+      ],
+      "description": "Q5 provenance fact (v30): does the state document an independent obligation for this element? The first three values are the positive bases (POC-3 src/poc3/score/rules.py _POSITIVE_STATE_REQUIREMENT_BASES); 'none' is an explicit no-obligation finding; 'unresolved' is incomplete evidence."
+    },
+    "core_can_express_requirement": {
+      "type": "string",
+      "enum": [
+        "yes",
+        "no",
+        "unresolved"
+      ],
+      "description": "Q5 core-fit fact (v30): can core Ed-Fi faithfully express the requirement? Candidates come from the state's actual spine catalog. 'no' is a demonstrated core gap; 'unresolved' is absent, incomplete, hallucinated, or wrong-channel evidence."
+    },
+    "extension_necessity": {
+      "type": "string",
+      "enum": [
+        "necessary",
+        "unnecessary",
+        "unresolved"
+      ],
+      "description": "Resolved determination since scoring plan v30 (POC-3 PR #284): not an extracted fact - it resolves from state_requirement_basis and core_can_express_requirement via a pure truth table (rules.py resolve_extension_necessity_values): a positive state basis OR core fit 'no' => necessary; basis 'none' AND core fit 'yes' => unnecessary; every other combination => unresolved. The retired extension_is_necessary fact must not appear in any emit."
+    },
+    "extension_necessity_basis": {
+      "type": "string",
+      "enum": [
+        "state_requirement_and_core_gap",
+        "state_requirement",
+        "core_gap",
+        "core_supported_without_state_requirement",
+        "unresolved"
+      ],
+      "description": "Which truth-table path resolved the necessity. Recorded by the rule stage in the dimensions payload as the extension_necessity_resolution input; listed here so consumers use the exact labels."
+    },
+    "fact_name": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "const": "extension_is_necessary"
+      },
+      "description": "Fact label, e.g. business_rules_present, has_conditional_logic, state_requirement_basis, core_can_express_requirement. The retired extension_is_necessary fact (replaced in scoring plan v30 by the state_requirement_basis / core_can_express_requirement pair) is rejected by contract."
+    },
+    "snapshot_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^.+@[a-f0-9]{16}$",
+      "description": "Content identity of the elements artifact a run consumed (ADR 0018): {artifact filename stem}@{sha256 canonical digest, first 16 hex}. The PRD's state_requirements_tag. Null when no elements artifact existed (hermetic fixtures)."
+    },
+    "sha256_digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "nullable_text": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "curated_value": {
+      "type": "object",
+      "description": "Wrapper for every workbook-band curated value in curation_records",
+      "properties": {
+        "value": {},
+        "author": {
+          "type": "string"
+        },
+        "ingested_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "source_workbook": {
+          "type": "string"
+        },
+        "workbook_generated": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "lens": {
+          "$ref": "#/$defs/lens"
+        },
+        "release_id_at_decision": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Curation v5: recorded on the two override-axis band captures"
+        }
+      },
+      "required": [
+        "value",
+        "author",
+        "ingested_at"
+      ],
+      "additionalProperties": false
+    },
+    "element_record_fields": {
+      "type": "object",
+      "description": "Shared shape of source_elements and spine_elements rows",
+      "properties": {
+        "ingestion_run_id": {
+          "type": "integer"
+        },
+        "snapshot_id": {
+          "$ref": "#/$defs/snapshot_id"
+        },
+        "state": {
+          "$ref": "#/$defs/state_code"
+        },
+        "edfi_version": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "domain": {
+          "$ref": "#/$defs/nullable_text",
+          "description": "Source Area - the state's own grouping vocabulary; empty for swagger-backfill rows. Not the Ed-Fi domain."
+        },
+        "edfi_domain": {
+          "$ref": "#/$defs/nullable_text",
+          "description": "Cross-state Ed-Fi domain, spine-derived; multi-domain entities joined with '; '. Null when the entity resolves to no spine domain."
+        },
+        "entity": {
+          "type": "string",
+          "description": "Normalized entity name - the best-matched Ed-Fi Data Standard entity (the PRD's standard_entity)"
+        },
+        "raw_entity": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "match_confidence": {
+          "$ref": "#/$defs/match_confidence"
+        },
+        "match_notes": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "element_name": {
+          "type": "string"
+        },
+        "element_path": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "data_type": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "cardinality": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/cardinality"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "definition_text": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "source": {
+          "$ref": "#/$defs/element_source"
+        },
+        "extension_name": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "in_scope": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "scope_confidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/confidence_level"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scope_rationale": {
+          "$ref": "#/$defs/nullable_text",
+          "description": "Required (non-null) whenever in_scope is false"
+        },
+        "business_rules_text": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "element_specific_rules": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "regulatory_citations": {
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "related_entities": {
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "descriptor_table_code": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "descriptor_table_values": {
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "collections_text": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "edfi_standard_definition": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "source_document": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "source_page_or_section": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "documented": {
+          "type": "boolean"
+        },
+        "documentation_source": {
+          "$ref": "#/$defs/documentation_source"
+        }
+      },
+      "required": [
+        "ingestion_run_id",
+        "snapshot_id",
+        "state",
+        "entity",
+        "element_name",
+        "source",
+        "documented",
+        "documentation_source"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "in_scope": {
+                "const": false
+              }
+            },
+            "required": [
+              "in_scope"
+            ]
+          },
+          "then": {
+            "properties": {
+              "scope_rationale": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "scope_rationale"
+            ]
+          }
+        }
+      ]
+    },
+    "ingestion_run": {
+      "type": "object",
+      "properties": {
+        "ingestion_run_id": {
+          "type": "integer"
+        },
+        "state": {
+          "$ref": "#/$defs/state_code"
+        },
+        "snapshot_id": {
+          "$ref": "#/$defs/snapshot_id"
+        },
+        "snapshot_digest": {
+          "$ref": "#/$defs/snapshot_digest"
+        },
+        "edfi_version": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "source_inputs": {
+          "type": [
+            "object",
+            "array"
+          ]
+        },
+        "source_element_count": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "spine_element_count": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "running",
+            "completed",
+            "failed"
+          ]
+        },
+        "started_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "finished_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "notes": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "imported_at": {
+          "$ref": "#/$defs/timestamp"
+        }
+      },
+      "required": [
+        "ingestion_run_id",
+        "state",
+        "snapshot_id",
+        "snapshot_digest",
+        "source_inputs",
+        "status",
+        "started_at"
+      ],
+      "additionalProperties": false
+    },
+    "source_element": {
+      "$ref": "#/$defs/element_record_fields"
+    },
+    "spine_element": {
+      "$ref": "#/$defs/element_record_fields"
+    },
+    "ingestion_status": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "$ref": "#/$defs/state_code"
+        },
+        "lens": {
+          "$ref": "#/$defs/lens"
+        },
+        "ingestion_run_id": {
+          "type": "integer"
+        },
+        "snapshot_id": {
+          "$ref": "#/$defs/snapshot_id"
+        },
+        "edfi_version": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "extracted_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "element_count": {
+          "type": "integer"
+        },
+        "source_inputs": {
+          "type": [
+            "object",
+            "array"
+          ]
+        },
+        "status": {
+          "type": "string"
+        },
+        "synced_at": {
+          "$ref": "#/$defs/timestamp"
+        }
+      },
+      "required": [
+        "state",
+        "lens",
+        "ingestion_run_id",
+        "extracted_at",
+        "element_count",
+        "status",
+        "synced_at"
+      ],
+      "additionalProperties": false
+    },
+    "gap_log": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "$ref": "#/$defs/state_code"
+        },
+        "ingestion_run_id": {
+          "type": "integer"
+        },
+        "spine_source": {
+          "type": "string"
+        },
+        "spine_unique_element_keys": {
+          "type": "integer"
+        },
+        "spine_extension_element_count": {
+          "type": "integer"
+        },
+        "source_element_count": {
+          "type": "integer"
+        },
+        "source_coverage": {
+          "type": "object",
+          "properties": {
+            "matched": {
+              "type": "integer"
+            },
+            "total": {
+              "type": "integer"
+            },
+            "pct": {
+              "type": "number"
+            },
+            "note": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "matched",
+            "total",
+            "pct"
+          ]
+        },
+        "spine_coverage": {
+          "type": "object",
+          "properties": {
+            "matched_unique_keys": {
+              "type": "integer"
+            },
+            "total_spine_keys": {
+              "type": "integer"
+            },
+            "pct": {
+              "type": "number"
+            },
+            "note": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "matched_unique_keys",
+            "total_spine_keys",
+            "pct"
+          ]
+        },
+        "unmatched_source_count": {
+          "type": "integer"
+        },
+        "unflatten_recovered_count": {
+          "type": "integer"
+        },
+        "unflatten_recovered": {
+          "type": "array"
+        },
+        "unmatched_by_entity": {
+          "type": "object"
+        },
+        "missing_from_docs_count": {
+          "type": "integer"
+        },
+        "missing_from_docs_samples": {
+          "type": "array"
+        },
+        "alias_tier_histogram": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "description": "Optional (issue #213): spine-lens documented matches per alias tier - audits how much match rate rides on the fuzziest tiers"
+        },
+        "extra": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "synced_at": {
+          "$ref": "#/$defs/timestamp"
+        }
+      },
+      "required": [
+        "state",
+        "ingestion_run_id",
+        "spine_source",
+        "source_coverage",
+        "spine_coverage",
+        "synced_at"
+      ],
+      "additionalProperties": false
+    },
+    "fact_run": {
+      "type": "object",
+      "properties": {
+        "fact_run_id": {
+          "type": "integer"
+        },
+        "state": {
+          "$ref": "#/$defs/state_code"
+        },
+        "lens": {
+          "$ref": "#/$defs/lens"
+        },
+        "ingestion_run_id": {
+          "type": "integer"
+        },
+        "snapshot_id": {
+          "$ref": "#/$defs/snapshot_id"
+        },
+        "contract_version": {
+          "type": "string"
+        },
+        "fact": {
+          "$ref": "#/$defs/fact_name",
+          "description": "The fact this run extracted - the artifact header key is 'fact'"
+        },
+        "artifact_name": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "artifact_path": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "prompt_version": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "model_id": {
+          "type": "string",
+          "description": "Model identifier for LLM-based runs; the literal 'deterministic' for det-fact runs"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "deterministic",
+            "llm"
+          ]
+        },
+        "status": {
+          "type": "string"
+        },
+        "cost_cap_hit": {
+          "type": "boolean"
+        },
+        "schema_error": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "scored_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_hash": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "record_count": {
+          "type": "integer"
+        },
+        "scored_count": {
+          "type": "integer"
+        },
+        "skipped_count": {
+          "type": "integer"
+        },
+        "entities_processed": {
+          "type": "integer"
+        },
+        "total_tokens_in": {
+          "type": "integer"
+        },
+        "total_tokens_out": {
+          "type": "integer"
+        },
+        "total_usd": {
+          "type": "number"
+        },
+        "cache_hit_count": {
+          "type": "integer"
+        },
+        "downgrade_count": {
+          "type": "integer"
+        },
+        "true_count": {
+          "type": "integer"
+        },
+        "false_count": {
+          "type": "integer"
+        },
+        "started_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "finished_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "header": {
+          "type": "object"
+        },
+        "imported_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "notes": {
+          "$ref": "#/$defs/nullable_text"
+        }
+      },
+      "required": [
+        "fact_run_id",
+        "state",
+        "lens",
+        "ingestion_run_id",
+        "snapshot_id",
+        "contract_version",
+        "fact",
+        "model_id",
+        "mode",
+        "status",
+        "started_at"
+      ],
+      "additionalProperties": false
+    },
+    "fact_observation": {
+      "type": "object",
+      "description": "One emitted fact-observation row (JSONL artifact row shape on dev). The fact name, model, and prompt version live on the parent run header; llm_value/validated_value separate what the model proposed from what survived the deterministic post-extraction gate. fact_observation_id / fact_run_id / created_at are landing-side additions, not emitted.",
+      "properties": {
+        "record_key": {
+          "$ref": "#/$defs/record_key"
+        },
+        "entity": {
+          "type": "string"
+        },
+        "element_name": {
+          "type": "string"
+        },
+        "llm_value": {
+          "description": "The value the model proposed, before validation"
+        },
+        "validated_value": {
+          "description": "The value after the deterministic gate - null when vetoed; scoring consumes this"
+        },
+        "spans": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "Validated evidence spans (verbatim source excerpts)"
+        },
+        "confidence": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "downgrade_reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "e.g. hallucinated_span, spans_on_false_claim, spans_on_default_true"
+        },
+        "any_invalid_spans": {
+          "type": "boolean"
+        },
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Row-level override; normally null (model lives on the run header)"
+        },
+        "prompt_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "record_key",
+        "entity",
+        "element_name",
+        "llm_value",
+        "validated_value",
+        "spans",
+        "confidence",
+        "downgrade_reason",
+        "any_invalid_spans",
+        "model",
+        "prompt_version"
+      ],
+      "additionalProperties": false
+    },
+    "scoring_run": {
+      "type": "object",
+      "properties": {
+        "scoring_run_id": {
+          "type": "integer"
+        },
+        "state": {
+          "$ref": "#/$defs/state_code"
+        },
+        "lens": {
+          "$ref": "#/$defs/lens"
+        },
+        "scored_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "status": {
+          "type": "string"
+        },
+        "scoring_plan_version": {
+          "type": "string"
+        },
+        "contract_version": {
+          "type": "string"
+        },
+        "snapshot_id": {
+          "$ref": "#/$defs/snapshot_id"
+        },
+        "snapshot_digest": {
+          "$ref": "#/$defs/snapshot_digest"
+        },
+        "release_id": {
+          "$ref": "#/$defs/release_id"
+        },
+        "ingestion_run_id": {
+          "type": "integer"
+        },
+        "assessor_type": {
+          "$ref": "#/$defs/assessor_type"
+        },
+        "assessor_id": {
+          "type": "string"
+        },
+        "model": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "prompt_version": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "data_completeness": {
+          "$ref": "#/$defs/data_completeness"
+        },
+        "record_count": {
+          "type": "integer"
+        },
+        "scored_count": {
+          "type": "integer"
+        },
+        "skipped_count": {
+          "type": "integer"
+        },
+        "in_scope_count": {
+          "type": "integer"
+        },
+        "needs_review_count": {
+          "type": "integer"
+        },
+        "header": {
+          "type": "object"
+        },
+        "notes": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "imported_at": {
+          "$ref": "#/$defs/timestamp"
+        }
+      },
+      "required": [
+        "scoring_run_id",
+        "state",
+        "lens",
+        "scored_at",
+        "status",
+        "scoring_plan_version",
+        "contract_version",
+        "snapshot_id",
+        "snapshot_digest",
+        "release_id",
+        "ingestion_run_id",
+        "assessor_type",
+        "assessor_id",
+        "data_completeness"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "data_completeness": {
+                "const": "legacy_import"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "assessor_type": {
+                "const": "human"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "score_record_fields": {
+      "type": "object",
+      "description": "The landed score-record payload (one per scored element per run). History storage and the typed current table the transform maintains are MC-6 storage design; this def specifies what lands.",
+      "properties": {
+        "state": {
+          "$ref": "#/$defs/state_code"
+        },
+        "lens": {
+          "$ref": "#/$defs/lens"
+        },
+        "record_key": {
+          "$ref": "#/$defs/record_key"
+        },
+        "scoring_run_id": {
+          "type": "integer"
+        },
+        "scored_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "entity": {
+          "type": "string"
+        },
+        "element_name": {
+          "type": "string"
+        },
+        "quality_mean_diagnostic": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "complexity_score": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 3
+        },
+        "tier_name": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "confidence_composite": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/confidence_level"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "adjusted_nachos_score": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 4.5
+        },
+        "in_scope": {
+          "type": "boolean"
+        },
+        "documentation_style": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/documentation_style"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "adjustment_drivers": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/adjustment_driver"
+          }
+        },
+        "extension_necessity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/extension_necessity"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Null for core elements"
+        },
+        "documentation_gap": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "data_completeness": {
+          "$ref": "#/$defs/data_completeness"
+        },
+        "nachos_justification": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "discovery_lens": {
+          "type": "string",
+          "enum": [
+            "source",
+            "spine_anchored"
+          ]
+        },
+        "documentation_source": {
+          "$ref": "#/$defs/documentation_source"
+        },
+        "dimensions": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "fact_provenance": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "review": {
+          "type": [
+            "object",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "state",
+        "lens",
+        "record_key",
+        "scoring_run_id",
+        "scored_at",
+        "entity",
+        "element_name",
+        "in_scope",
+        "data_completeness"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "data_completeness": {
+                "const": "legacy_import"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "fact_provenance": {
+                "type": "null"
+              }
+            },
+            "description": "Loader validation: a legacy row cannot claim full provenance"
+          },
+          "else": {
+            "properties": {
+              "dimensions": {
+                "type": "object"
+              },
+              "fact_provenance": {
+                "type": "object"
+              }
+            },
+            "required": [
+              "dimensions",
+              "fact_provenance"
+            ]
+          }
+        }
+      ]
+    },
+    "score_record": {
+      "$ref": "#/$defs/score_record_fields"
+    },
+    "adjudication_block": {
+      "type": "object",
+      "description": "Emitted by poc3 review adjudicate (curation v5). agreed_by is the PRD's 'participants'. axis is 'adjusted' today; 'extension_necessity' is the PRD-proposed addition. Base tier deliberately excluded: consensus that a tier is wrong is a rule problem (methodology change + plan-version bump).",
+      "properties": {
+        "status": {
+          "const": "adjudicated"
+        },
+        "axis": {
+          "type": "string",
+          "enum": [
+            "adjusted",
+            "extension_necessity"
+          ]
+        },
+        "value": {},
+        "lens": {
+          "$ref": "#/$defs/lens"
+        },
+        "agreed_by": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Who agreed - adjudication is a team determination"
+        },
+        "decided_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Documents the decision; never an input to scoring"
+        },
+        "engine_score_at_decision": {
+          "type": [
+            "number",
+            "string",
+            "boolean"
+          ]
+        },
+        "plan_version_at_decision": {
+          "type": "string"
+        },
+        "release_id_at_decision": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Which exact release was contested (curation v5) - additive precision, never a staleness input; null on pre-ADR-0018 sidecars"
+        }
+      },
+      "required": [
+        "status",
+        "axis",
+        "value",
+        "lens",
+        "agreed_by",
+        "decided_at",
+        "rationale",
+        "engine_score_at_decision",
+        "plan_version_at_decision",
+        "release_id_at_decision"
+      ],
+      "additionalProperties": false
+    },
+    "fact_correction": {
+      "type": "object",
+      "properties": {
+        "value": {},
+        "lens": {
+          "$ref": "#/$defs/lens"
+        },
+        "author": {
+          "type": "string"
+        },
+        "corrected_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prior_value": {},
+        "prior_provenance": {
+          "type": "string",
+          "pattern": "^(llm|llm_downgraded:.+|human_corrected)$"
+        },
+        "plan_version_at_correction": {
+          "type": "string"
+        },
+        "release_id_at_decision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "value",
+        "lens",
+        "author",
+        "corrected_at",
+        "rationale",
+        "prior_value",
+        "prior_provenance",
+        "plan_version_at_correction"
+      ],
+      "additionalProperties": false
+    },
+    "curation_record": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "$ref": "#/$defs/state_code"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "updated_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "record_key": {
+          "$ref": "#/$defs/record_key"
+        },
+        "entity": {
+          "type": "string"
+        },
+        "element_name": {
+          "type": "string"
+        },
+        "reviewed": {
+          "$ref": "#/$defs/curated_value"
+        },
+        "analyst_adjusted_override": {
+          "$ref": "#/$defs/curated_value"
+        },
+        "analyst_base_override": {
+          "$ref": "#/$defs/curated_value"
+        },
+        "required": {
+          "$ref": "#/$defs/curated_value"
+        },
+        "recommendations": {
+          "$ref": "#/$defs/curated_value"
+        },
+        "edfi_comments": {
+          "$ref": "#/$defs/curated_value"
+        },
+        "ds_next_steps": {
+          "$ref": "#/$defs/curated_value"
+        },
+        "state_response": {
+          "$ref": "#/$defs/curated_value"
+        },
+        "kb_reviewed": {
+          "$ref": "#/$defs/curated_value"
+        },
+        "reviewed_with_state": {
+          "$ref": "#/$defs/curated_value"
+        },
+        "validated_by": {
+          "$ref": "#/$defs/curated_value"
+        },
+        "adoption_timeline": {
+          "$ref": "#/$defs/curated_value"
+        },
+        "commitment_status": {
+          "$ref": "#/$defs/curated_value"
+        },
+        "commitment_comments": {
+          "$ref": "#/$defs/curated_value"
+        },
+        "adjudication": {
+          "$ref": "#/$defs/adjudication_block"
+        },
+        "confirmation": {
+          "$ref": "#/$defs/confirmation_block"
+        },
+        "facts": {
+          "type": "object",
+          "description": "Analyst corrections keyed by fact name; LLM facts only. The v30 pair state_requirement_basis / core_can_express_requirement are each independently correctable; the resolved extension_necessity value is never corrected directly - it recomputes through the truth table on the next aggregate run.",
+          "propertyNames": {
+            "$ref": "#/$defs/fact_name"
+          },
+          "properties": {
+            "state_requirement_basis": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/fact_correction"
+                },
+                {
+                  "properties": {
+                    "value": {
+                      "$ref": "#/$defs/state_requirement_basis"
+                    }
+                  }
+                }
+              ]
+            },
+            "core_can_express_requirement": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/fact_correction"
+                },
+                {
+                  "properties": {
+                    "value": {
+                      "$ref": "#/$defs/core_can_express_requirement"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/fact_correction"
+          }
+        },
+        "history": {
+          "type": "array",
+          "description": "Band-column entries capped at 50; replaced adjudication and fact-correction blocks exempt from the cap",
+          "items": {
+            "type": "object",
+            "properties": {
+              "column": {
+                "type": "string"
+              },
+              "value": {},
+              "author": {
+                "type": "string"
+              },
+              "replaced_at": {
+                "$ref": "#/$defs/timestamp"
+              },
+              "source_workbook": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "column",
+              "value",
+              "replaced_at"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "state",
+        "version",
+        "record_key",
+        "entity",
+        "element_name"
+      ],
+      "additionalProperties": false
+    },
+    "score_status": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "$ref": "#/$defs/state_code"
+        },
+        "lens": {
+          "$ref": "#/$defs/lens"
+        },
+        "scoring_run_id": {
+          "type": "integer"
+        },
+        "edfi_version": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "scored_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "record_count": {
+          "type": "integer"
+        },
+        "scored_count": {
+          "type": "integer"
+        },
+        "skipped_count": {
+          "type": "integer"
+        },
+        "mean_quality_score": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "needs_review_count": {
+          "type": "integer"
+        },
+        "scoring_plan_version": {
+          "type": "string"
+        },
+        "model": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "prompt_version": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "in_scope_count": {
+          "type": "integer"
+        },
+        "documentation_gap_count": {
+          "type": "integer"
+        },
+        "header": {
+          "type": "object"
+        },
+        "synced_at": {
+          "$ref": "#/$defs/timestamp"
+        }
+      },
+      "required": [
+        "state",
+        "lens",
+        "scoring_run_id",
+        "scored_at",
+        "record_count",
+        "scored_count",
+        "scoring_plan_version",
+        "synced_at"
+      ],
+      "additionalProperties": false
+    },
+    "score_label": {
+      "type": "object",
+      "properties": {
+        "scoring_plan_version": {
+          "type": "string"
+        },
+        "label_type": {
+          "type": "string",
+          "enum": [
+            "nachos_tier",
+            "adjusted_band",
+            "complexity_band",
+            "threshold"
+          ]
+        },
+        "value_key": {
+          "type": "string"
+        },
+        "display_label": {
+          "type": "string"
+        },
+        "description": {
+          "$ref": "#/$defs/nullable_text"
+        },
+        "min_value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "max_value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "sort_order": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "scoring_plan_version",
+        "label_type",
+        "value_key",
+        "display_label",
+        "sort_order"
+      ],
+      "additionalProperties": false
+    },
+    "snapshot_digest": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "sha256 over the canonical form of the input artifact (parsed JSON, volatile run-timestamp keys stripped, sorted keys, compact separators) - same content means same digest across re-ingests and formatting differences. Never recompute from a stored jsonb payload."
+    },
+    "release_id": {
+      "type": "string",
+      "description": "Deterministic hash over the full run identity (ADR 0018) - the import adapter's idempotency key; the landing zone dedupes on it and curation decision stamps record it as release_id_at_decision."
+    },
+    "confirmation_block": {
+      "type": "object",
+      "description": "Analyst agreement with the engine (curation v4: 'Reviewed? = Agree' band capture or CLI). A fresh confirmation retires the row's review-queue entry; staleness follows the same engine-value + plan-version model as adjudication.",
+      "properties": {
+        "status": {
+          "const": "confirmed"
+        },
+        "lens": {
+          "$ref": "#/$defs/lens"
+        },
+        "confirmed_by": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "confirmed_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "source_workbook": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "workbook_generated": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "engine_score_at_confirmation": {
+          "type": "number"
+        },
+        "plan_version_at_confirmation": {
+          "type": "string"
+        },
+        "release_id_at_decision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "status",
+        "lens",
+        "confirmed_at",
+        "engine_score_at_confirmation",
+        "plan_version_at_confirmation",
+        "release_id_at_decision"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
