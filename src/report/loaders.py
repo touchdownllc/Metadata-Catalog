@@ -26,6 +26,7 @@ import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from src.models import identity
 from src.models.element import ElementRecord, StateElements
 from src.models.spine import StateSpine
 from src.utils.artifacts import read_json_artifact
@@ -171,7 +172,7 @@ def load_gap_metadata(
         elem = g.get("element_name")
         if not entity or not elem:
             continue
-        out[f"{state.upper()}|{entity}|{elem}"] = g
+        out[identity.record_key(state, entity, elem)] = g
     return out
 
 
@@ -240,8 +241,9 @@ def load_peer_gap_artifact(path: Path) -> list[dict]:
 
 
 def record_key(state: str, record: ElementRecord) -> str:
-    """Mirror the key shape the score sidecar writes."""
-    return f"{state.upper()}|{record.entity}|{record.element_name}"
+    """Mirror the key shape the score sidecar writes (via the one
+    format home, ``src.models.identity`` — plan item A1)."""
+    return identity.record_key(state, record.entity, record.element_name)
 
 
 # Sorts after every printable character — used so blank Source Area
