@@ -69,6 +69,30 @@ from src.utils.paths import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# Sidecar-envelope contract version (scoring-boundary ADR 0017). Ported
+# ahead of the aggregate v3 emit so `score/release_contract.py` can
+# freeze the release envelope now; the emit that stamps this and
+# produces the v3 per-record fields lands with the aggregate
+# envelope-identity slice (MC-21). At v28 the aggregate still emits the
+# v28 shape — nothing reads these constants yet except the contract.
+SIDECAR_CONTRACT_VERSION: str = "3"
+
+# Canonical adjustment-driver tokens (issue #318 / MC schema contract).
+# BYTE-IDENTITY IS LOAD-BEARING: the committed release schema pins these
+# exact spellings. Ported ahead of the emit that produces them.
+DRIVER_UNNECESSARY_EXT: str = "unnecessary_ext"
+DRIVER_NECESSARY_EXT: str = "necessary_ext"
+DRIVER_MULTI_ENTITY: str = "multi_entity"
+DRIVER_SF_EXPLAINED: str = "fidelity_divergent_explained"
+DRIVER_SF_UNCLEAR: str = "fidelity_divergent_unclear"
+ADJUSTMENT_DRIVER_TOKENS: tuple[str, ...] = (
+    DRIVER_UNNECESSARY_EXT,
+    DRIVER_NECESSARY_EXT,
+    DRIVER_MULTI_ENTITY,
+    DRIVER_SF_EXPLAINED,
+    DRIVER_SF_UNCLEAR,
+)
+
 SCORING_PLAN_VERSION: str = "28"
 # v28 — issue #249 fact-level curation overlay (2026-07-13). Analyst
 # corrections to LLM-extracted facts (recorded by `mc review

@@ -1,0 +1,256 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/touchdownllc/nachos-ai-poc-3/blob/dev/docs/contracts/assessment-release.schema.json",
+  "title": "POC-3 assessment release (score sidecar)",
+  "description": "Envelope contract for one scoring release: the {state}_scores_{source,spine}.json artifact. Envelope fields are frozen per contract version (ADR 0017); payload fields are method-private.",
+  "x-sidecar-contract-version": "3",
+  "type": "object",
+  "properties": {
+    "state": {
+      "type": "string"
+    },
+    "lens": {
+      "enum": [
+        "source",
+        "spine"
+      ]
+    },
+    "edfi_version": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "scored_at": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "prompt_version": {
+      "type": "string"
+    },
+    "scoring_plan_version": {
+      "type": "string"
+    },
+    "contract_version": {
+      "const": "3"
+    },
+    "assessor_type": {
+      "type": "string"
+    },
+    "assessor_id": {
+      "type": "string"
+    },
+    "snapshot_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "snapshot_digest": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "release_id": {
+      "type": "string"
+    },
+    "record_count": {
+      "type": "integer"
+    },
+    "scored_count": {
+      "type": "integer"
+    },
+    "skipped_count": {
+      "type": "integer"
+    },
+    "mean_quality_score": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "needs_review_count": {
+      "type": "integer"
+    },
+    "dimension_stats": {
+      "type": "object"
+    },
+    "in_scope_count": {
+      "type": "integer"
+    },
+    "nachos_score_histogram": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer"
+      }
+    },
+    "adjusted_nachos_score_histogram": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer"
+      }
+    },
+    "mean_nachos_score": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "mean_adjusted_nachos_score": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "documentation_gap_count": {
+      "type": "integer"
+    },
+    "scores": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "record_key": {
+            "type": "string",
+            "pattern": "^[^|]+\\|[^|]+\\|.+$"
+          },
+          "entity": {
+            "type": "string"
+          },
+          "element_name": {
+            "type": "string"
+          },
+          "complexity_score": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "adjusted_nachos_score": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "in_scope": {
+            "type": "boolean"
+          },
+          "confidence_composite": {
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "discovery_lens": {
+            "type": "string"
+          },
+          "documentation_source": {
+            "type": "string"
+          },
+          "tier_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "adjustment_drivers": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "unnecessary_ext",
+                "necessary_ext",
+                "multi_entity",
+                "fidelity_divergent_explained",
+                "fidelity_divergent_unclear"
+              ]
+            }
+          },
+          "extension_necessity": {
+            "enum": [
+              "necessary",
+              "unnecessary",
+              "unresolved",
+              null
+            ]
+          },
+          "data_completeness": {
+            "enum": [
+              "pipeline_full",
+              "pipeline_machine_only",
+              "legacy_import"
+            ]
+          },
+          "dimensions": {
+            "description": "method-private payload — free to churn within a contract version"
+          },
+          "fact_provenance": {
+            "description": "method-private payload — free to churn within a contract version"
+          },
+          "review": {
+            "description": "method-private payload — free to churn within a contract version"
+          },
+          "nachos_justification": {
+            "description": "method-private payload — free to churn within a contract version"
+          },
+          "_quality_mean_diagnostic": {
+            "description": "method-private payload — free to churn within a contract version"
+          }
+        },
+        "required": [
+          "record_key",
+          "entity",
+          "element_name",
+          "complexity_score",
+          "adjusted_nachos_score",
+          "in_scope",
+          "confidence_composite",
+          "discovery_lens",
+          "documentation_source",
+          "tier_name",
+          "adjustment_drivers",
+          "extension_necessity",
+          "data_completeness",
+          "dimensions",
+          "fact_provenance",
+          "review",
+          "nachos_justification",
+          "_quality_mean_diagnostic"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "state",
+    "lens",
+    "edfi_version",
+    "scored_at",
+    "model",
+    "prompt_version",
+    "scoring_plan_version",
+    "contract_version",
+    "assessor_type",
+    "assessor_id",
+    "snapshot_id",
+    "snapshot_digest",
+    "release_id",
+    "record_count",
+    "scored_count",
+    "skipped_count",
+    "mean_quality_score",
+    "needs_review_count",
+    "dimension_stats",
+    "in_scope_count",
+    "nachos_score_histogram",
+    "adjusted_nachos_score_histogram",
+    "mean_nachos_score",
+    "mean_adjusted_nachos_score",
+    "documentation_gap_count",
+    "scores"
+  ],
+  "additionalProperties": false
+}
